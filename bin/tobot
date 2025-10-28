@@ -2,10 +2,10 @@
 # This file is placed in the Public Domain.
 
 
+import inspect
 import json
-import logging
 import os
-import os.path
+import pathlib
 import sys
 import time
 
@@ -13,35 +13,22 @@ import time
 sys.path.insert(0, os.getcwd())
 
 
-from tobot.clients import Client
-from tobot.command import Commands, command, scanner, table
-from tobot.methods import parse
-from tobot.handler import Event
-from tobot.objects import update
-from tobot.package import NAME, Mods
-from tobot.package import getmod, inits, md5sum, modules, setdirs, sums
-from tobot.utility import level, spl
-from tobot.workdir import Workdir, moddir, pidfile, pidname, setwd
+from tob.clients import Client
+from tob.command import Commands, Config, command, parse, scanner, table
+from tob.handler import Event
+from tob.logging import level
+from tob.package import Mods, getmod, inits, modules, sums
+from tob.persist import Workdir, moddir, pidname, skel
+from tob.utility import md5sum, spl
 
 
-CHECKSUM = ""
+import tobot.modules as MODS
 
 
-class Config:
+CHECKSUM = "74c8e52fc1ef4d1f5dc90eae4f2200c4"
 
-    debug = False
-    default = "irc,mdl,rss"
-    gets = {}
-    index = None
-    init  = ""
-    level = "warn"
-    mod = ""
-    opts = ""
-    otxt = ""
-    sets = {}
-    verbose = False
-    version = 124
-    wdr = ""
+
+Config.name = "tobot"
 
 
 class CLI(Client):
@@ -51,7 +38,7 @@ class CLI(Client):
         self.register("command", command)
 
     def raw(self, txt):
-        out(txt.encode('utf-8', 'replace').decode("utf-8"))
+        print(txt.encode('utf-8', 'replace').decode("utf-8"))
 
 
 class Console(CLI):
@@ -69,19 +56,46 @@ class Console(CLI):
         return evt
 
 
+def boot(doparse=True):
+    Workdir.wdr = os.path.expanduser(f"~/.{Config.name}")
+    Mods.add("modules", os.path.dirname(inspect.getfile(MODS)))
+    if doparse:
+        parse(Config, " ".join(sys.argv[1:]))
+        Config.level = Config.sets.level or Config.level
+    if "v" in Config.opts:
+        banner()
+    level(Config.level)
+    if "e" in Config.opts:
+        sys.path.insert(0, os.getcwd())
+        Mods.dirs["mods"] = "examples"
+    else:
+        Mods.dirs["mods"] = moddir()
+    if "a" in Config.opts:
+        Config.sets.init = ",".join(modules())
+    Commands.add(cmd)
+    Commands.add(ver)
+    skel()
+    table()
+    sums(CHECKSUM)
+
+
+"scripts"
+
+
 def background():
     daemon("-v" in sys.argv)
     privileges()
+    Config.opts += "m"
     boot(False)
-    pidfile(pidname(NAME))
-    inits(spl(Config.init or Config.default))
+    pidfile(pidname(Config.name))
+    inits(spl(Config.default))
     forever()
 
 
 def console():
     import readline # noqa: F401
     boot()
-    for _mod, thr in inits(spl(Config.init)):
+    for _mod, thr in inits(spl(Config.sets.init)):
         if "w" in Config.opts:
             thr.join(30.0)
     csl = Console()
@@ -100,92 +114,28 @@ def control():
     evt = Event()
     evt.orig = repr(csl)
     evt.type = "command"
-    evt.txt = Config.otxt
+    evt.txt = " ".join(sys.argv[1:])
+    evt.cmd  = evt.txt.split()[0]
     command(evt)
     evt.wait()
 
 
 def service():
     privileges()
+    Config.opts += "m"
     boot(False)
-    pidfile(pidname(NAME))
+    pidfile(pidname(Config.name))
     banner()
-    inits(spl(Config.init or Config.default))
+    inits(spl(Config.default))
     forever()
 
 
-def boot(doparse=True):
-    if doparse:
-        parse(Config, " ".join(sys.argv[1:]))
-        update(Config, Config.sets, empty=False)
-        Workdir.wdr = Config.wdr
-    level(Config.level)
-    setwd(NAME)
-    if "m" in Config.opts:
-        Mods.dir("mods", "mods")
-    if "n" in Config.opts:
-        Mods.dir("network")
-    setdirs("n" in Config.opts, "m" in Config.opts)
-    if "v" in Config.opts:
-        banner()
-    if "a" in Config.opts:
-        Config.init = ",".join(modules())
-    sums(CHECKSUM)
-    table(CHECKSUM)
-    Commands.add(cmd)
-    Commands.add(ver)
-    logging.info("workdir is %s", Workdir.wdr)
-
-
-"commands"
-
-
-def cmd(event):
-    event.reply(",".join(sorted(Commands.names)))
-
-
-def md5(event):
-    tbl = getmod("tbl")
-    if tbl:
-        event.reply(md5sum(tbl.__file__))
-    else:
-        event.reply("table is not there.")
-
-
-def srv(event):
-    import getpass
-    name = getpass.getuser()
-    event.reply(TXT % (NAME.upper(), name, name, name, NAME))
-
-
-def tbl(event):
-    Commands.names = {}
-    scanner()
-    event.reply("# This file is placed in the Public Domain.")
-    event.reply("")
-    event.reply("")
-    event.reply('"lookup tables"')
-    event.reply("")
-    event.reply("")
-    event.reply(f"NAMES = {json.dumps(Commands.names, indent=4, sort_keys=True)}")
-    event.reply("")
-    event.reply("")
-    event.reply("MD5 = {")
-    for module in scanner():
-        event.reply(f'    "{module.__name__.split(".")[-1]}": "{md5sum(module.__file__)}",')
-    event.reply("}")
-
-
-def ver(event):
-    event.reply(f"{NAME.upper()} {Config.version}")
-
-
-"utilities"
+"utility"
 
 
 def banner():
     tme = time.ctime(time.time()).replace("  ", " ")
-    out("%s %s since %s (%s)" % (NAME.upper(), Config.version, tme, Config.level.upper()))
+    print("%s %s since %s (%s)" % (Config.name.upper(), Config.version, tme, Config.level.upper()))
 
 
 def check(txt):
@@ -227,9 +177,13 @@ def forever():
             break
 
 
-def out(txt):
-    print(txt)
-    sys.stdout.flush()
+def pidfile(filename):
+    if os.path.exists(filename):
+        os.unlink(filename)
+    path2 = pathlib.Path(filename)
+    path2.parent.mkdir(parents=True, exist_ok=True)
+    with open(filename, "w", encoding="utf-8") as fds:
+        fds.write(str(os.getpid()))
 
 
 def privileges():
@@ -240,6 +194,63 @@ def privileges():
     os.setuid(pwnam2.pw_uid)
 
 
+"commands"
+
+
+def cmd(event):
+    event.reply(",".join(sorted(Commands.names or Commands.cmds)))
+
+
+def md5(event):
+    tbl = getmod("tbl")
+    if tbl:
+        event.reply(md5sum(tbl.__file__))
+    else:
+        event.reply("table is not there.")
+
+
+def srv(event):
+    import getpass
+    name = getpass.getuser()
+    event.reply(TXT % (Config.name.upper(), name, name, name, Config.name))
+
+
+def tbl(event):
+    Commands.names = {}
+    scanner()
+    event.reply("# This file is placed in the Public Domain.")
+    event.reply("")
+    event.reply("")
+    event.reply('"lookup tables"')
+    event.reply("")
+    event.reply("")
+    event.reply(f"NAMES = {json.dumps(Commands.names, indent=4, sort_keys=True)}")
+    event.reply("")
+    event.reply("")
+    event.reply("MD5 = {")
+    for module in scanner():
+        event.reply(f'    "{module.__name__.split(".")[-1]}": "{md5sum(module.__file__)}",')
+    event.reply("}")
+
+
+def ver(event):
+    event.reply(f"{Config.name.upper()} {Config.version}")
+
+
+TXT = """[Unit]
+Description=%s
+After=network-online.target
+
+[Service]
+Type=simple
+User=%s
+Group=%s
+ExecStart=/home/%s/.local/bin/%s -s
+
+[Install]
+WantedBy=multi-user.target"""
+
+
 "runtime"
 
 
@@ -247,7 +258,7 @@ def wrapped(func):
     try:
         func()
     except (KeyboardInterrupt, EOFError):
-        out("")
+        print("")
 
 
 def wrap(func):
@@ -275,18 +286,7 @@ def main():
         wrapped(control)
 
 
-TXT = """[Unit]
-Description=%s
-After=network-online.target
-
-[Service]
-Type=simple
-User=%s
-Group=%s
-ExecStart=/home/%s/.local/bin/%s -s
-
-[Install]
-WantedBy=multi-user.target"""
+"trampoline"
 
 
 if __name__ == "__main__":
