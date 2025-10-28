@@ -28,7 +28,8 @@ import tobot.modules as MODS
 CHECKSUM = "74c8e52fc1ef4d1f5dc90eae4f2200c4"
 
 
-Config.name = "tobot"
+Config.name = "tob"
+Config.version = 1
 
 
 class CLI(Client):

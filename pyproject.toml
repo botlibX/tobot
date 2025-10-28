@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 
 [project]
-name = "tobotot"
+name = "tobot"
 version = "1"
 authors = [
     {name = "Bart Thate", email = "bthate@dds.nl" },
@@ -24,13 +24,14 @@ classifiers=[
 
 
 [project.urls]
-"home" = "https://pypi.org/project/tobotot"
-"bugs" = "https://github.com/botlibX/tobotot/issues"
-"source" = "https://github.com/botlibX/tobotot"
+"home" = "https://pypi.org/project/tobot"
+"bugs" = "https://github.com/botlibX/tobot/issues"
+"source" = "https://github.com/botlibX/tobot"
 
 
 [tool.setuptools]
 packages = [
+    'tob',
     'tobot',
     'tobot.modules',
     'tobot.network',
