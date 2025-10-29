@@ -176,8 +176,8 @@ opml
 **PROGRAMMING**
 
 |
-| tobot has it's user modules in the ~/.tob/mods directory so for a
-| hello world command you would  edit a file in ~/.tob/mods/hello.py
+| tobot has it's user modules in the ~/.tobot/mods directory so for a
+| hello world command you would  edit a file in ~/.tobot/mods/hello.py
 | and add the following
 |
 
