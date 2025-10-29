@@ -5,24 +5,11 @@
 
 
 import inspect
-import os
 
 
 from .brokers import Fleet
 from .package import getmod, modules
 from .utility import parse
-
-
-class Config:
-
-    debug = False
-    default = "irc,rss"
-    init  = ""
-    level = "warn"
-    name = os.path.dirname(__file__).split(os.sep)[-1]
-    opts = ""
-    verbose = False
-    version = 132
 
 
 class Commands:
@@ -90,7 +77,6 @@ def table():
 def __dir__():
     return (
         'Comamnds',
-        'Config',
         'command',
         'parse',
         'scan',
