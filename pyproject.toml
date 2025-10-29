@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tobot"
-version = "2"
+version = "3"
 authors = [
     {name = "Bart Thate", email = "bthate@dds.nl" },
 ]

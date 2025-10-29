@@ -28,7 +28,7 @@ from tobot import modules as MODS
 
 
 Config.name = "tobot"
-Config.version = 2
+Config.version = 3
 
 
 class CLI(Client):

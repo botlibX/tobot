@@ -22,7 +22,7 @@ class Config:
     name = os.path.dirname(__file__).split(os.sep)[-1]
     opts = ""
     verbose = False
-    version = 134
+    version = 132
 
 
 class Commands:
