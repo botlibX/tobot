@@ -29,6 +29,7 @@ from tob.utility import elapsed, name
 from tobot import modules as MODS
 
 
+Config.name = "tobot"
 Workdir.wdr = ".test"
 
 
@@ -136,9 +137,9 @@ def main(clt):
     Mods.add("mods", moddir())
     if os.path.exists(Workdir.wdr):
         shutil.rmtree(Workdir.wdr)
+    boot()
     if "v" in Config.opts:
         banner()
-    boot()
     nr = Config.index or 1
     if "z" in Config.opts:
         Pool.init(CLI)
