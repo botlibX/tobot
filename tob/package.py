@@ -12,8 +12,8 @@ import sys
 import _thread
 
 
-from tob.threads import launch
-from tob.utility import md5sum
+from .threads import launch
+from .utility import md5sum
 
 
 class Mods:

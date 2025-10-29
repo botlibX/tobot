@@ -5,11 +5,12 @@
 
 
 import inspect
+import os
 
 
-from tob.brokers import Fleet
-from tob.package import getmod, modules
-from tob.utility import parse
+from .brokers import Fleet
+from .package import getmod, modules
+from .utility import parse
 
 
 class Config:
@@ -18,7 +19,7 @@ class Config:
     default = "irc,rss"
     init  = ""
     level = "warn"
-    name = "tob"
+    name = os.path.dirname(__file__).split(os.sep)[-1]
     opts = ""
     verbose = False
     version = 134

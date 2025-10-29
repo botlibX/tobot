@@ -12,8 +12,8 @@ import threading
 import time
 
 
-from tob.marshal import dump, load
-from tob.objects import Object, deleted, fqn, search, update
+from .marshal import dump, load
+from .objects import Object, deleted, fqn, search, update
 
 
 lock = threading.RLock()

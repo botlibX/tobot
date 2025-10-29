@@ -12,7 +12,7 @@ from random import SystemRandom
 
 from tob.brokers import Fleet
 from tob.handler import Event
-from tob.repeats import Repeater
+from tob.threads import Repeater
 
 
 rand = SystemRandom()

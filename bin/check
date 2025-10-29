@@ -30,7 +30,7 @@ def main():
     if len(sys.argv) > 1:
         NAME = sys.argv[1]
     else:
-        NAME = "tobot"
+        NAME = "tob"
     popen(f'grep -R "print(" {NAME}/*.py')
     popen(f'grep -R "__import__" {NAME}/*.py')
     popen(f'grep -R "importlib" {NAME}/*.py')

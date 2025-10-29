@@ -10,7 +10,7 @@ import time
 import _thread
 
 
-from tob.threads import launch
+from .threads import launch
 
 
 class Event:

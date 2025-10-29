@@ -9,9 +9,9 @@ import threading
 import _thread
 
 
-from tob.brokers import Fleet
-from tob.handler import Handler
-from tob.threads import launch
+from .brokers import Fleet
+from .handler import Handler
+from .threads import launch
 
 
 class Client(Handler):

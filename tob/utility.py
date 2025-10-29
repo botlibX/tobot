@@ -8,7 +8,7 @@ import hashlib
 import time
 
 
-from tob.objects import Default, items
+from .objects import Default, items
 
 
 FORMATS = [
