@@ -59,7 +59,7 @@ class Console(CLI):
 "scripts"
 
 
-def background(clt):
+def background():
     daemon("-v" in sys.argv)
     privileges()
     boot(MODS, CHECKSUM, False)
@@ -69,24 +69,24 @@ def background(clt):
     forever()
 
 
-def console(clt):
+def console():
     import readline # noqa: F401
     boot(MODS, CHECKSUM)
     Commands.add(cmd, ver)
     for _mod, thr in inits(spl(Config.sets.init)):
         if "w" in Config.opts:
             thr.join(30.0)
-    csl = clt()
+    csl = Console()
     csl.start()
     forever()
 
 
-def control(clt):
+def control():
     if len(sys.argv) == 1:
         return
     boot(MODS, CHECKSUM)
     Commands.add(cmd, md5, tbl, srv, ver)
-    csl = clt()
+    csl = CLI()
     evt = Event()
     evt.orig = repr(csl)
     evt.txt = " ".join(sys.argv[1:])
@@ -95,7 +95,7 @@ def control(clt):
     evt.wait()
 
 
-def service(clt):
+def service():
     privileges()
     boot(MODS, CHECKSUM, False)
     Commands.add(cmd, ver)
@@ -190,13 +190,13 @@ def main():
     if check('v'):
         banner()
     if check("c"):
-        wrap(console, Console)
+        wrap(console)
     elif check("d"):
         background()
     elif check("s"):
-        wrapped(service, CLI)
+        wrapped(service)
     else:
-        wrapped(control, CLI)
+        wrapped(control)
 
 
 "trampoline"

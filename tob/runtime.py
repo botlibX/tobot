@@ -92,14 +92,14 @@ def privileges():
     os.setuid(pwnam2.pw_uid)
 
 
-def wrapped(func, clt):
+def wrapped(func):
     try:
-        func(clt)
+        func()
     except (KeyboardInterrupt, EOFError):
         pass
 
 
-def wrap(func, clt):
+def wrap(func):
     import termios
     old = None
     try:
@@ -107,7 +107,7 @@ def wrap(func, clt):
     except termios.error:
         pass
     try:
-        wrapped(func, clt)
+        wrapped(func)
     finally:
         if old:
             termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, old)

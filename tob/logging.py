@@ -4,16 +4,16 @@
 "logging at level"
 
 
-import logging
+import logging as log
 
 
 LEVELS = {
-    'debug': logging.DEBUG,
-    'info': logging.INFO,
-    'warning': logging.WARNING,
-    'warn': logging.WARNING,
-    'error': logging.ERROR,
-    'critical': logging.CRITICAL,
+    'debug': log.DEBUG,
+    'info': log.INFO,
+    'warning': log.WARNING,
+    'warn': log.WARNING,
+    'error': log.ERROR,
+    'critical': log.CRITICAL
 }
 
 
@@ -21,22 +21,22 @@ datefmt = "%H:%M:%S"
 format_short = "%(module).3s %(message)-76s"
 
 
-class Formatter(logging.Formatter):
+class Formatter(log.Formatter):
 
     def format(self, record):
         record.module = record.module.upper()
-        return logging.Formatter.format(self, record)
+        return log.Formatter.format(self, record)
 
 
 def level(loglevel="debug"):
     if loglevel != "none":
-        ch = logging.StreamHandler()
+        ch = log.StreamHandler()
         formatter = Formatter(fmt=format_short, datefmt=datefmt)
         ch.setFormatter(formatter)
-        logger = logging.getLogger()
         lvl = LEVELS.get(loglevel)
         if not lvl:
             return
+        logger = log.getLogger()
         logger.setLevel(LEVELS.get(loglevel))
         logger.addHandler(ch)
 

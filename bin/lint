@@ -1,1 +1,1 @@
-pylint -d C,R,E0402,E0401 tobot mods bin/tinder
+pylint -d C,R,E0402,E0401 tob tobot bin/tobot  bin/tinder
