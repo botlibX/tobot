@@ -19,8 +19,9 @@ from tob.handler import Event
 from tob.logging import level
 from tob.package import Mods, getmod, inits, modules, sums
 from tob.persist import Workdir, moddir, pidname, skel
-from tob.runtime import Config
-from tob.utility import md5sum, spl
+from tob.runtime import Config, boot, daemon, forever, pidfile, privileges
+from tob.runtime import wrap, wrapped
+from tob.utility import fmt, md5sum, spl
 
 
 from tobot import modules as MODS
@@ -58,42 +59,14 @@ class Console(CLI):
         return evt
 
 
-"in the beginning"
-
-
-def banner():
-    tme = time.ctime(time.time()).replace("  ", " ")
-    print("%s %s since %s (%s)" % (Config.name.upper(), Config.version, tme, Config.level.upper()))
-
-
-
-def first(doparse=True):
-    Mods.add("modules", os.path.dirname(inspect.getfile(MODS)))
-    Mods.add("mods", moddir())
-    Commands.add(cmd)
-    Commands.add(ver)
-
-
-def boot(doparse=True):
-    if doparse:
-        parse(Config, " ".join(sys.argv[1:]))
-        Config.level = Config.sets.level or Config.level
-    Workdir.wdr = Workdir.wdr or os.path.expanduser(f"~/.{Config.name}")
-    level(Config.level)
-    if "a" in Config.opts:
-        Config.sets.init = ",".join(modules())
-    skel()
-    table()
-    sums(CHECKSUM)
-
-
 "scripts"
 
 
 def background(clt):
     daemon("-v" in sys.argv)
     privileges()
-    boot(False)
+    boot(MODS, CHECKSUM, False)
+    Commands.add(cmd, ver)
     pidfile(pidname(Config.name))
     inits(spl(Config.default))
     forever()
@@ -101,7 +74,8 @@ def background(clt):
 
 def console(clt):
     import readline # noqa: F401
-    boot()
+    boot(MODS, CHECKSUM)
+    Commands.add(cmd, ver)
     for _mod, thr in inits(spl(Config.sets.init)):
         if "w" in Config.opts:
             thr.join(30.0)
@@ -113,26 +87,32 @@ def console(clt):
 def control(clt):
     if len(sys.argv) == 1:
         return
-    boot()
+    boot(MODS, CHECKSUM)
+    Commands.add(cmd, md5, tbl, srv, ver)
     csl = clt()
     evt = Event()
     evt.orig = repr(csl)
-    evt.type = "command"
     evt.txt = " ".join(sys.argv[1:])
-    evt.cmd  = evt.txt.split()[0]
+    evt.type = "command"
     command(evt)
     evt.wait()
 
 
 def service(clt):
     privileges()
-    boot(False)
+    boot(MODS, CHECKSUM, False)
+    Commands.add(cmd, ver)
     pidfile(pidname(Config.name))
     inits(spl(Config.default))
     forever()
 
 
 "utility"
+
+
+def banner():
+    tme = time.ctime(time.time()).replace("  ", " ")
+    print("%s %s since %s (%s)" % (Config.name.upper(), Config.version, tme, Config.level.upper()))
 
 
 def check(txt):
@@ -144,51 +124,6 @@ def check(txt):
             if char in arg:
                 return True
     return False
-
-
-def daemon(verbose=False):
-    pid = os.fork()
-    if pid != 0:
-        os._exit(0)
-    os.setsid()
-    pid2 = os.fork()
-    if pid2 != 0:
-        os._exit(0)
-    if not verbose:
-        with open('/dev/null', 'r', encoding="utf-8") as sis:
-            os.dup2(sis.fileno(), sys.stdin.fileno())
-        with open('/dev/null', 'a+', encoding="utf-8") as sos:
-            os.dup2(sos.fileno(), sys.stdout.fileno())
-        with open('/dev/null', 'a+', encoding="utf-8") as ses:
-            os.dup2(ses.fileno(), sys.stderr.fileno())
-    os.umask(0)
-    os.chdir("/")
-    os.nice(10)
-
-
-def forever():
-    while True:
-        try:
-            time.sleep(0.1)
-        except (KeyboardInterrupt, EOFError):
-            break
-
-
-def pidfile(filename):
-    if os.path.exists(filename):
-        os.unlink(filename)
-    path2 = pathlib.Path(filename)
-    path2.parent.mkdir(parents=True, exist_ok=True)
-    with open(filename, "w", encoding="utf-8") as fds:
-        fds.write(str(os.getpid()))
-
-
-def privileges():
-    import getpass
-    import pwd
-    pwnam2 = pwd.getpwnam(getpass.getuser())
-    os.setgid(pwnam2.pw_gid)
-    os.setuid(pwnam2.pw_uid)
 
 
 "commands"
@@ -234,6 +169,9 @@ def ver(event):
     event.reply(f"{Config.name.upper()} {Config.version}")
 
 
+"data"
+
+
 TXT = """[Unit]
 Description=%s
 After=network-online.target
@@ -251,44 +189,16 @@ WantedBy=multi-user.target"""
 "runtime"
 
 
-def wrapped(func, clt):
-    try:
-        func(clt)
-    except (KeyboardInterrupt, EOFError):
-        pass
-
-
-def wrap(func, clt):
-    import termios
-    old = None
-    try:
-        old = termios.tcgetattr(sys.stdin.fileno())
-    except termios.error:
-        pass
-    try:
-        wrapped(func, clt)
-    finally:
-        if old:
-            termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, old)
-
-
 def main():
     if check('v'):
         banner()
     if check("c"):
-        first()
         wrap(console, Console)
     elif check("d"):
-        first()
         background()
     elif check("s"):
-        first()
         wrapped(service, CLI)
     else:
-        first()
-        Commands.add(md5)
-        Commands.add(tbl)
-        Commands.add(srv)
         wrapped(control, CLI)
 
 

@@ -18,10 +18,11 @@ class Commands:
     names = {}
 
     @staticmethod
-    def add(func) -> None:
-        name = func.__name__
-        Commands.cmds[name] = func
-        Commands.names[name] = func.__module__.split(".")[-1]
+    def add(*args) -> None:
+        for func in args:
+            name = func.__name__
+            Commands.cmds[name] = func
+            Commands.names[name] = func.__module__.split(".")[-1]
 
     @staticmethod
     def get(cmd):

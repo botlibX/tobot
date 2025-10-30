@@ -19,13 +19,11 @@ from tob.threads import Timed, launch
 def init():
     nrs = 0
     for fnm, obj in find("timed"):
-        print(fnm, obj)
         if "time" not in dir(obj):
             continue
         nrs += 1
         diff = float(obj.time) - time.time()
         if diff > 0:
-            print("ok")
             timer = Timed(diff, Fleet.announce, obj.txt)
             timer.start()
         else:
@@ -187,6 +185,9 @@ def tmr(event):
     write(timer)
     launch(timer.start)
     event.reply("ok " +  elapsed(diff))
+
+
+"data"
 
 
 MONTHS = [

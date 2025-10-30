@@ -21,9 +21,6 @@ FORMATS = [
 ]
 
 
-STARTTIME = time.time()
-
-
 def elapsed(seconds, short=True):
     txt = ""
     nsec = float(seconds)
@@ -213,7 +210,6 @@ def parse(obj, txt):
 
 def __dir__():
     return (
-        'STARTTIME',
         'elapsed',
         'extract_date',
         'name',
