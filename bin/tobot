@@ -28,7 +28,7 @@ CHECKSUM = "74c8e52fc1ef4d1f5dc90eae4f2200c4"
 
 
 Config.name = "tobot"
-Config.version = 3
+Config.version = 4
 
 
 class CLI(Client):

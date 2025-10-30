@@ -29,7 +29,7 @@ class Config:
     name = os.path.dirname(__file__).split(os.sep)[-1]
     opts = ""
     verbose = False
-    version = 132
+    version = 136
 
 
 def boot(mods, checksum, doparse=True):
