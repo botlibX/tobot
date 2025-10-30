@@ -2,10 +2,8 @@
 # This file is placed in the Public Domain.
 
 
-import inspect
 import json
 import os
-import pathlib
 import sys
 import time
 
@@ -14,14 +12,13 @@ sys.path.insert(0, os.getcwd())
 
 
 from tob.clients import Client
-from tob.command import Commands, command, parse, scanner, table
+from tob.command import Commands, command, scanner
 from tob.handler import Event
-from tob.logging import level
-from tob.package import Mods, getmod, inits, modules, sums
-from tob.persist import Workdir, moddir, pidname, skel
+from tob.package import getmod, inits
+from tob.persist import pidname
 from tob.runtime import Config, boot, daemon, forever, pidfile, privileges
 from tob.runtime import wrap, wrapped
-from tob.utility import fmt, md5sum, spl
+from tob.utility import md5sum, spl
 
 
 from tobot import modules as MODS
