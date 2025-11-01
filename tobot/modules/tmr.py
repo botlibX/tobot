@@ -6,35 +6,55 @@
 
 import datetime
 import logging
+import random
 import re
 import time
 
 
 from tob.brokers import Fleet
-from tob.persist import find, write
+from tob.objects import Object, items
+from tob.persist import getpath, last, write
 from tob.utility import elapsed, extract_date
 from tob.threads import Timed, launch
 
 
 def init():
-    nrs = 0
-    for fnm, obj in find("timed"):
-        if "time" not in dir(obj):
+    Timers.path = last(Timers.timers) or getpath(Timers.timers)
+    delete = []
+    for tme, args in items(Timers.timers):
+        orig, channel, txt = args
+        origin = Fleet.like(orig)
+        if not origin:
             continue
-        nrs += 1
-        diff = float(obj.time) - time.time()
+        diff = float(tme) - time.time()
         if diff > 0:
-            timer = Timed(diff, Fleet.announce, obj.txt)
+            timer = Timed(diff, Fleet.say, origin, channel, txt)
             timer.start()
         else:
-            obj.__deleted__ = True
-            write(obj, fnm)
-    logging.warning("%s timers", nrs)
+            delete.append(tme)
+    for tme in delete:
+        Timers.delete(tme)
+    write(Timers.timers, Timers.path)
+    logging.warning("%s timers", len(Timers.timers))
 
 
 class NoDate(Exception):
 
     pass
+
+
+class Timers:
+
+    path = ""
+    timers = Object()
+
+    @staticmethod
+    def add(tme, orig, channel,  txt):
+        Timers.timers[tme] = (orig, channel, txt)
+
+    @staticmethod
+    def delete(tme):
+        del Timers.timers[tme]
 
 
 def get_day(daystr):
@@ -141,12 +161,10 @@ def tmr(event):
     result = ""
     if not event.rest:
         nmr = 0
-        for _fn, obj in find('timed'):
-            if "time" not in dir(obj):
-                continue
-            lap = float(obj.time) - time.time()
+        for tme, txt in items(Timers.timers):
+            lap = float(tme) - time.time()
             if lap > 0:
-                event.reply(f'{nmr} {obj.txt} {elapsed(lap)}')
+                event.reply(f'{nmr} {txt} {elapsed(lap)}')
                 nmr += 1
         if not nmr:
             event.reply("no timers.")
@@ -172,9 +190,11 @@ def tmr(event):
         hour =  get_hour(event.rest)
         if hour:
             target += hour
+    target += random.random() 
     if not target or time.time() > target:
         event.reply("already passed given time.")
         return result
+    print(target)
     diff = target - time.time()
     txt = " ".join(event.args[1:])
     timer = Timed(diff, Fleet.say, event.orig, event.channel, txt)
@@ -182,7 +202,8 @@ def tmr(event):
     timer.orig = event.orig
     timer.time = target
     timer.txt = txt
-    write(timer)
+    Timers.add(target, event.orig, event.channel, txt)
+    write(Timers.timers, Timers.path)
     launch(timer.start)
     event.reply("ok " +  elapsed(diff))
 

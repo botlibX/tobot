@@ -18,7 +18,7 @@ LEVELS = {
 
 
 datefmt = "%H:%M:%S"
-format_short = "%(module).3s %(message)-76s"
+format_short = "%(module)-3s %(message)-76s"
 
 
 class Formatter(log.Formatter):

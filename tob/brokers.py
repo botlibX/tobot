@@ -31,6 +31,17 @@ class Fleet:
         return Fleet.clients.get(orig, None)
 
     @staticmethod
+    def like(orig):
+        clt = Fleet.get(orig)
+        if clt:
+            return clt
+        target = orig.split()[0][2:]
+        for origin in Fleet.clients:
+            print(target, origin)
+            if target in origin:
+                return Fleet.get(origin)
+
+    @staticmethod
     def say(orig, channel, txt):
         client = Fleet.get(orig)
         client.say(channel, txt)
