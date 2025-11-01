@@ -23,15 +23,15 @@ def init():
     delete = []
     for tme, args in items(Timers.timers):
         orig, channel, txt = args
-        origin = Fleet.like(orig)
-        if not origin:
-            continue
-        diff = float(tme) - time.time()
-        if diff > 0:
-            timer = Timed(diff, Fleet.say, origin, channel, txt)
-            timer.start()
-        else:
-            delete.append(tme)
+        for origin in Fleet.like(orig):
+            if not origin:
+                continue
+            diff = float(tme) - time.time()
+            if diff > 0:
+                timer = Timed(diff, Fleet.say, origin, channel, txt)
+                timer.start()
+            else:
+                delete.append(tme)
     for tme in delete:
         Timers.delete(tme)
     write(Timers.timers, Timers.path)
@@ -164,7 +164,7 @@ def tmr(event):
         for tme, txt in items(Timers.timers):
             lap = float(tme) - time.time()
             if lap > 0:
-                event.reply(f'{nmr} {txt} {elapsed(lap)}')
+                event.reply(f'{nmr} {" ".join(txt)} {elapsed(lap)}')
                 nmr += 1
         if not nmr:
             event.reply("no timers.")
@@ -194,17 +194,12 @@ def tmr(event):
     if not target or time.time() > target:
         event.reply("already passed given time.")
         return result
-    print(target)
     diff = target - time.time()
     txt = " ".join(event.args[1:])
-    timer = Timed(diff, Fleet.say, event.orig, event.channel, txt)
-    timer.channel = event.channel
-    timer.orig = event.orig
-    timer.time = target
-    timer.txt = txt
     Timers.add(target, event.orig, event.channel, txt)
     write(Timers.timers, Timers.path)
-    launch(timer.start)
+    timer = Timed(diff, Fleet.say, event.orig, event.channel, txt)
+    timer.start()
     event.reply("ok " +  elapsed(diff))
 
 

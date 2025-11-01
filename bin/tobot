@@ -73,10 +73,10 @@ def console():
     import readline # noqa: F401
     boot(MODS, CHECKSUM)
     Commands.add(cmd, ver)
+    csl = Console()
     for _mod, thr in inits(spl(Config.sets.init)):
         if "w" in Config.opts:
             thr.join(30.0)
-    csl = Console()
     csl.start()
     forever()
 

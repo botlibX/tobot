@@ -80,9 +80,8 @@ class Timed:
 
     def start(self):
         self.kwargs["name"] = self.name
-        timer = Timy(self.sleep, self.run, *self.args, **self.kwargs)
-        timer.start()
-        self.timer = timer
+        self.timer = Timy(self.sleep, self.run, *self.args, **self.kwargs)
+        launch(self.timer.start)
 
     def stop(self):
         if self.timer:
