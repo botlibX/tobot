@@ -12,8 +12,12 @@ import sys
 import _thread
 
 
+from .logging import level
 from .threads import launch
 from .utility import md5sum
+
+
+level("info")
 
 
 class Mods:
@@ -89,7 +93,6 @@ def modules():
 
 
 def sums(checksum):
-    logging.info(checksum)
     tbl = getmod("tbl")
     if not tbl:
         logging.info("no table")

@@ -5,6 +5,7 @@
 
 
 import inspect
+import logging
 import os
 import pathlib
 import sys
@@ -32,19 +33,9 @@ class Config:
     version = 136
 
 
-def boot(mods, checksum, doparse=True):
-    Mods.add("modules", os.path.dirname(inspect.getfile(mods)))
-    Mods.add("mods", moddir())
-    if doparse:
-        parse(Config, " ".join(sys.argv[1:]))
-        Config.level = Config.sets.level or Config.level
-    Workdir.wdr = Workdir.wdr or os.path.expanduser(f"~/.{Config.name}")
-    level(Config.level)
-    if "a" in Config.opts:
-        Config.sets.init = ",".join(modules())
-    skel()
-    table()
-    sums(checksum)
+def banner():
+    tme = time.ctime(time.time()).replace("  ", " ")
+    logging.info("%s %s since %s (%s)" % (Config.name.upper(), Config.version, tme, Config.level.upper()))
 
 
 def daemon(verbose=False):

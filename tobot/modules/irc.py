@@ -324,7 +324,7 @@ class IRC(Output):
         rawstr = str(txt)
         rawstr = rawstr.replace("\u0001", "")
         rawstr = rawstr.replace("\001", "")
-        logging.debug(txt)
+        rlog("debug", txt, IGNORE)
         obj = Event()
         obj.args = []
         obj.rawstr = rawstr
