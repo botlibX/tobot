@@ -9,6 +9,7 @@ import json
 
 from tob.command import Commands, scanner
 from tob.package import getmod
+from tob.runtime import NAME
 from tob.utility import md5sum
 
 
@@ -23,7 +24,7 @@ def md5(event):
 def srv(event):
     import getpass
     name = getpass.getuser()
-    event.reply(TXT % (Config.name.upper(), name, name, name, Config.name))
+    event.reply(TXT % (NAME, name, name, name, NAME))
 
 
 def tbl(event):
