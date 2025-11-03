@@ -65,10 +65,7 @@ class Output(Client):
         super().stop()
 
     def wait(self):
-        try:
-            self.oqueue.join()
-        except Exception:
-            _thread.interrupt_main()
+        self.oqueue.join()
 
 
 def __dir__():

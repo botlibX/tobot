@@ -27,7 +27,7 @@ from tob.utility import md5sum, parse, spl
 from tobot import modules as MODS
 
 
-CHECKSUM = "fc957b7fd51b8fed35527aed0ae6826b"
+CHECKSUM = "ec14aadb68aeb36827e819cf400293c0"
 CHECKSUM = ""
 
 
