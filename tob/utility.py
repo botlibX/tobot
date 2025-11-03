@@ -5,7 +5,9 @@
 
 
 import hashlib
+import logging
 import time
+import _thread
 
 
 from .objects import Default, items
@@ -70,6 +72,11 @@ def extract_date(daystr):
         except ValueError:
             pass
     return res
+
+
+def excepthook(args):
+    logging.exception(args[1])
+    _thread.interrupt_main()
 
 
 def md5sum(path):

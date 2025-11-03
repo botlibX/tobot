@@ -32,12 +32,9 @@ class Event:
         self.result[time.time()] = txt
 
     def wait(self, timeout=None):
-        try:
-            self._ready.wait()
-            if self._thr:
-                self._thr.join(timeout)
-        except (KeyboardInterrupt, EOFError):
-            _thread.interrupt_main()
+        self._ready.wait()
+        if self._thr:
+            self._thr.join(timeout)
 
 
 class Handler:
@@ -56,14 +53,11 @@ class Handler:
 
     def loop(self):
         while True:
-            try:
-                event = self.poll()
-                if event is None:
-                    break
-                event.orig = repr(self)
-                self.callback(event)
-            except (KeyboardInterrupt, EOFError):
-                _thread.interrupt_main()
+            event = self.poll()
+            if event is None:
+                break
+            event.orig = repr(self)
+            self.callback(event)
 
     def poll(self):
         return self.queue.get()

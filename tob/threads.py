@@ -11,7 +11,10 @@ import time
 import _thread
 
 
-from .utility import name
+from .utility import excepthook, name
+
+
+threading.excepthook = excepthook
 
 
 class Thread(threading.Thread):
@@ -32,23 +35,12 @@ class Thread(threading.Thread):
         yield from dir(self)
 
     def join(self, timeout=None):
-        result = None
-        try:
-            super().join(timeout)
-            result = self.result
-        except (KeyboardInterrupt, EOFError):
-            _thread.interrupt_main()
-        return result
+        super().join(timeout)
+        return self.result
 
     def run(self):
         func, args = self.queue.get()
-        try:
-            self.result = func(*args)
-        except (KeyboardInterrupt, EOFError):
-            _thread.interrupt_main()
-        except Exception as ex:
-            logging.exception(ex)
-            _thread.interrupt_main()
+        self.result = func(*args)
 
 
 class Timy(threading.Timer):

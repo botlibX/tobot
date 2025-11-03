@@ -27,7 +27,7 @@ from tob.utility import md5sum, parse, spl
 from tobot import modules as MODS
 
 
-CHECKSUM = "fc957b7fd51b8fed35527aed0ae6826b"
+CHECKSUM = "ec14aadb68aeb36827e819cf400293c0"
 CHECKSUM = ""
 
 
@@ -102,6 +102,7 @@ def control():
 def service():
     privileges()
     boot(MODS, CHECKSUM, False)
+    banner()
     Commands.add(cmd, ver)
     pidfile(pidname(Config.name))
     inits(spl(Config.default))
@@ -123,7 +124,8 @@ def boot(mods, checksum, doparse=True):
         parse(Config, " ".join(sys.argv[1:]))
         Config.level = Config.sets.level or Config.level
     level(Config.level)
-    banner()
+    if "v" in Config.opts:
+        banner()
     Workdir.wdr = Workdir.wdr or os.path.expanduser(f"~/.{Config.name}")
     if "a" in Config.opts:
         Config.sets.init = ",".join(modules())
