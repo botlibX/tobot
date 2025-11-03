@@ -21,6 +21,7 @@ from tob.handler import Event
 from tob.logging import LEVELS
 from tob.objects import Object, keys
 from tob.persist import getpath, last, write
+from tob.runtime import NAME
 from tob.threads import launch
 from tob.utility import edit, fmt
 
@@ -28,10 +29,10 @@ from tob.utility import edit, fmt
 IGNORE = ["PING", "PONG", "PRIVMSG"] 
 
 
-lock  = threading.RLock()
+lock = threading.RLock()
 
 
-def init(config):
+def  init(config):
     irc = IRC(config.name)
     irc.start()
     irc.events.joined.wait(30.0)
@@ -44,20 +45,30 @@ def init(config):
 
 class Config:
 
-    def __init__(self, name):
-        self.channel = f"#{name}"
-        self.commands = True
-        self.control = "!"
-        self.nick = name
-        self.password = ""
-        self.port = 6667
-        self.realname = name
-        self.sasl = False
-        self.server = "localhost"
-        self.servermodes = ""
-        self.sleep = 60
-        self.username = name
-        self.users = False
+    channel = f"#{NAME}"
+    commands = True
+    control = "!"
+    name = NAME
+    nick = NAME
+    password = ""
+    port = 6667
+    realname = NAME
+    sasl = False
+    server = "localhost"
+    servermodes = ""
+    sleep = 60
+    username = NAME
+    users = False
+
+    def __init__(self):
+        self.channel = Config.channel
+        self.commands = Config.commands
+        self.name = Config.name
+        self.nick = Config.nick
+        self.port = Config.port
+        self.realname = Config.realname
+        self.server = Config.server
+        self.username = Config.username
 
 
 class Event(Event):

@@ -22,7 +22,6 @@ from tob.handler import Event
 from tob.logging import level
 from tob.package import Mods, modules, sums
 from tob.persist import Workdir, moddir, skel
-from tob.runtime import Config
 from tob.threads import launch
 from tob.utility import elapsed
 
@@ -33,49 +32,22 @@ from tobot import modules as MODS
 CHECKSUM = "74c8e52fc1ef4d1f5dc90eae4f2200c4"
 
 
-Config.name = "tobot"
-Config.version = 4
 Workdir.wdr = ".test"
 
 
 events = []
-examples = {
-    "cmd": [""],
-    "dis": [""],
-    "dne": ["", "test2"],
-    "dpl": ["hnrss title,url", ""],
-    "flt": [""],
-    "fnd": ["", "log", "rss", "config", "todo"],
-    "log": ["", "test"],
-    "man": [""],
-    "mod": [""],
-    "mre": [""],
-    "nme": ["", "hnrss hackernews"],
-    "now": [""],
-    "pwd": ["", "bla mekker"],
-    "req": [""],
-    "res": ["", "hnrss"],
-    "srv": [""],
-    "tdo": ["", "test2", "test3"],
-    "thr": [""],
-    "upt": [""]
-}
 
 
-pre = {
-    "cfg": ["", "nick=mekker"],
-    "imp": ["", "tests/feeds.opml"],
-    "log": ["", "bla"],
-    "rss": ["","http://hnrss.org/newest"],
-    "tdo": ["", "mekker"]
-}
+class Config:
 
-
-post = {
-    "dne": ["", "hnrss"],
-    "exp": [""],
-    "rem": ["", "hnrss"]
-}
+    debug = False
+    default = "irc,rss"
+    init  = ""
+    level = "warn"
+    name = "tobot"
+    opts = ""
+    verbose = False
+    version = 4
 
 
 class CLI(Client):
@@ -87,7 +59,6 @@ class CLI(Client):
     def raw(self, txt):
         if "v" in Config.opts:
             print(txt)
-
 
 
 class Pool:
@@ -120,8 +91,6 @@ class Pool:
             clt = Pool.clients[Pool.nrlast]
             clt.put(evt)
             Pool.nrlast += 1
-
-
 
 
 def banner():
@@ -173,6 +142,45 @@ def wrap(func, clt):
     finally:
         if old:
             termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, old)
+
+
+examples = {
+    "cmd": [""],
+    "dis": [""],
+    "dne": ["", "test2"],
+    "dpl": ["hnrss title,url", ""],
+    "flt": [""],
+    "fnd": ["", "log", "rss", "config", "todo"],
+    "log": ["", "test"],
+    "man": [""],
+    "mod": [""],
+    "mre": [""],
+    "nme": ["", "hnrss hackernews"],
+    "now": [""],
+    "pwd": ["", "bla mekker"],
+    "req": [""],
+    "res": ["", "hnrss"],
+    "srv": [""],
+    "tdo": ["", "test2", "test3"],
+    "thr": [""],
+    "upt": [""]
+}
+
+
+pre = {
+    "cfg": ["", "nick=mekker"],
+    "imp": ["", "tests/feeds.opml"],
+    "log": ["", "bla"],
+    "rss": ["","http://hnrss.org/newest"],
+    "tdo": ["", "mekker"]
+}
+
+
+post = {
+    "dne": ["", "hnrss"],
+    "exp": [""],
+    "rem": ["", "hnrss"]
+}
 
 
 def main(clt):

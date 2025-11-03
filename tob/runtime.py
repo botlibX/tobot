@@ -10,6 +10,7 @@ import sys
 import time
 
 
+NAME = os.path.dirname(__file__).split(os.sep)[-1]
 STARTTIME = time.time()
 
 
@@ -82,7 +83,6 @@ def wrap(func):
 def __dir__():
     return (
         'STARTTIME',
-        'Config',
         'boot',
         'daemon',
         'forever',
