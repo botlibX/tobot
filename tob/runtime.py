@@ -4,6 +4,8 @@
 "runtime"
 
 
+
+import logging 
 import os
 import pathlib
 import sys
@@ -12,6 +14,29 @@ import time
 
 NAME = os.path.dirname(__file__).split(os.sep)[-1]
 STARTTIME = time.time()
+
+
+LEVELS = {
+    'debug': logging.DEBUG,
+    'info': logging.INFO,
+    'warning': logging.WARNING,
+    'warn': logging.WARNING,
+    'error': logging.ERROR,
+    'critical': logging.CRITICAL
+}
+
+
+class Logging:
+
+    datefmt = "%H:%M:%S"
+    format = "%(module).3s %(message).76s"
+
+
+class Formatter(logging.Formatter):
+
+    def format(self, record):
+        record.module = record.module.upper()
+        return logging.Formatter.format(self, record)
 
 
 def daemon(verbose=False):
@@ -40,6 +65,21 @@ def forever():
             time.sleep(0.1)
         except (KeyboardInterrupt, EOFError):
             break
+
+
+def level(loglevel="debug"):
+    if loglevel != "none":
+        lvl = LEVELS.get(loglevel)
+        if not lvl:
+            return
+        logger = logging.getLogger()
+        for handler in logger.handlers:
+            logger.removeHandler(handler)
+        logger.setLevel(lvl)
+        formatter = Formatter(Logging.format, datefmt=Logging.datefmt)
+        ch = logging.StreamHandler()
+        ch.setFormatter(formatter)
+        logger.addHandler(ch)
 
 
 def pidfile(filename):
@@ -86,59 +126,9 @@ def __dir__():
         'boot',
         'daemon',
         'forever',
+        'level',
         'pidfile',
         'privileges',
         'wrap',
         'wrapped'
     )
-# This file is placed in the Public Domain.
-
-
-"logging at level"
-
-
-import logging 
-
-
-LEVELS = {
-    'debug': logging.DEBUG,
-    'info': logging.INFO,
-    'warning': logging.WARNING,
-    'warn': logging.WARNING,
-    'error': logging.ERROR,
-    'critical': logging.CRITICAL
-}
-
-
-class Logging:
-
-    datefmt = "%H:%M:%S"
-    format = "%(module).3s %(message).76s"
-
-
-class Formatter(logging.Formatter):
-
-    def format(self, record):
-        record.module = record.module.upper()
-        return logging.Formatter.format(self, record)
-
-
-def level(loglevel="debug"):
-    if loglevel != "none":
-        lvl = LEVELS.get(loglevel)
-        if not lvl:
-            return
-        logger = logging.getLogger()
-        for handler in logger.handlers:
-            logger.removeHandler(handler)
-        logger.setLevel(lvl)
-        formatter = Formatter(Logging.format, datefmt=Logging.datefmt)
-        ch = logging.StreamHandler()
-        ch.setFormatter(formatter)
-        logger.addHandler(ch)
-
-
-def __dir__():
-    return (
-        'level',
-   )

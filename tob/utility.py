@@ -62,11 +62,6 @@ def elapsed(seconds, short=True):
     return txt
 
 
-def excepthook(args):
-    logging.exception(args[1])
-    _thread.interrupt_main()
-
-
 def extract_date(daystr):
     daystr = daystr.encode('utf-8', 'replace').decode("utf-8")
     res = time.time()
