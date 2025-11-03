@@ -4,7 +4,10 @@
 "administrator"
 
 
-from tob.command import Commands
+import json
+
+
+from tob.command import Commands, scanner
 from tob.package import getmod
 from tob.utility import md5sum
 
@@ -39,10 +42,6 @@ def tbl(event):
     for module in scanner():
         event.reply(f'    "{module.__name__.split(".")[-1]}": "{md5sum(module.__file__)}",')
     event.reply("}")
-
-
-def ver(event):
-    event.reply(f"{Config.name.upper()} {Config.version}")
 
 
 TXT = """[Unit]

@@ -30,10 +30,14 @@ class Event:
     def reply(self, txt):
         self.result[time.time()] = txt
 
+
     def wait(self, timeout=None):
-        self._ready.wait()
-        if self._thr:
-            self._thr.join(timeout)
+        try:
+            self._ready.wait()
+            if self._thr:
+                self._thr.join(timeout)
+        except (KeyboardInterrupt, EOFError):
+            _thread.interrupt_main()
 
 
 class Handler:

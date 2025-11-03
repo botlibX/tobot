@@ -13,11 +13,12 @@ sys.path.insert(0, os.getcwd())
 
 
 from tob.clients import Client
-from tob.command import Commands, command, scanner, table
+from tob.command import Commands, command, scan, scanner, table
 from tob.handler import Event
 from tob.methods import parse
 from tob.package import Mods, getmod, inits, modules, sums
 from tob.persist import Workdir, moddir, pidname, skel
+from tob.network import admin
 from tob.runtime import daemon, forever, pidfile, privileges
 from tob.runtime import level, wrap, wrapped
 from tob.utility import md5sum, spl
@@ -26,8 +27,10 @@ from tob.utility import md5sum, spl
 from tobot import modules as MODS
 
 
-CHECKSUM = "ec14aadb68aeb36827e819cf400293c0"
-CHECKSUM = ""
+CHECKSUM = "b2bc69d39688b99a12037586a66125e2"
+
+
+"config"
 
 
 class Config:
@@ -38,8 +41,12 @@ class Config:
     level = "warn"
     name = "tobot"
     opts = ""
+    dosums = True
     verbose = False
     version = 5
+
+
+"clients"
 
 
 class CLI(Client):
@@ -67,56 +74,7 @@ class Console(CLI):
         return evt
 
 
-"scripts"
-
-
-def background():
-    daemon("-v" in sys.argv)
-    privileges()
-    boot(MODS, CHECKSUM, False)
-    Commands.add(cmd, ver)
-    pidfile(pidname(Config.name))
-    inits(spl(Config.default), Config)
-    forever()
-
-
-def console():
-    import readline # noqa: F401
-    boot(MODS, CHECKSUM)
-    Commands.add(cmd, ver)
-    csl = Console()
-    for _mod, thr in inits(spl(Config.sets.init), Config):
-        if "w" in Config.opts:
-            thr.join(30.0)
-    csl.start()
-    forever()
-
-
-def control():
-    if len(sys.argv) == 1:
-        return
-    boot(MODS, CHECKSUM)
-    Commands.add(cmd, md5, tbl, srv, ver)
-    csl = CLI()
-    evt = Event()
-    evt.orig = repr(csl)
-    evt.txt = " ".join(sys.argv[1:])
-    evt.type = "command"
-    command(evt)
-    evt.wait()
-
-
-def service():
-    privileges()
-    boot(MODS, CHECKSUM, False)
-    banner()
-    Commands.add(cmd, ver)
-    pidfile(pidname(Config.name))
-    inits(spl(Config.default), Config)
-    forever()
-
-
-"utility"
+"in the beginning"
 
 
 def banner():
@@ -139,7 +97,66 @@ def boot(mods, checksum, doparse=True):
         Config.sets.init = ",".join(modules())
     skel()
     table()
-    sums(checksum)
+    if Config.dosums:
+        sums(checksum)
+    Commands.add(cmd, ver)
+
+
+def cmd(event):
+    event.reply(",".join(sorted(Commands.names or Commands.cmds)))
+
+
+def ver(event):
+    event.reply(f"{Config.name.upper()} {Config.version}")
+
+
+"scripts"
+
+
+def background():
+    daemon("-v" in sys.argv)
+    privileges()
+    boot(MODS, CHECKSUM, False)
+    pidfile(pidname(Config.name))
+    inits(spl(Config.default), Config)
+    forever()
+
+
+def console():
+    import readline # noqa: F401
+    boot(MODS, CHECKSUM)
+    csl = Console()
+    for _mod, thr in inits(spl(Config.sets.init), Config):
+        if "w" in Config.opts:
+            thr.join(30.0)
+    csl.start()
+    forever()
+
+
+def control():
+    if len(sys.argv) == 1:
+        return
+    boot(MODS, CHECKSUM)
+    scan(admin)
+    csl = CLI()
+    evt = Event()
+    evt.orig = repr(csl)
+    evt.txt = " ".join(sys.argv[1:])
+    evt.type = "command"
+    command(evt)
+    evt.wait()
+
+
+def service():
+    privileges()
+    boot(MODS, CHECKSUM, False)
+    banner()
+    pidfile(pidname(Config.name))
+    inits(spl(Config.default), Config)
+    forever()
+
+
+"runtime"
 
 
 def check(txt):
@@ -153,69 +170,6 @@ def check(txt):
     return False
 
 
-"commands"
-
-
-def cmd(event):
-    event.reply(",".join(sorted(Commands.names or Commands.cmds)))
-
-
-def md5(event):
-    tbl = getmod("tbl")
-    if tbl:
-        event.reply(md5sum(tbl.__file__))
-    else:
-        event.reply("table is not there.")
-
-
-def srv(event):
-    import getpass
-    name = getpass.getuser()
-    event.reply(TXT % (Config.name.upper(), name, name, name, Config.name))
-
-
-def tbl(event):
-    Commands.names = {}
-    scanner()
-    event.reply("# This file is placed in the Public Domain.")
-    event.reply("")
-    event.reply("")
-    event.reply('"lookup tables"')
-    event.reply("")
-    event.reply("")
-    event.reply(f"NAMES = {json.dumps(Commands.names, indent=4, sort_keys=True)}")
-    event.reply("")
-    event.reply("")
-    event.reply("MD5 = {")
-    for module in scanner():
-        event.reply(f'    "{module.__name__.split(".")[-1]}": "{md5sum(module.__file__)}",')
-    event.reply("}")
-
-
-def ver(event):
-    event.reply(f"{Config.name.upper()} {Config.version}")
-
-
-"data"
-
-
-TXT = """[Unit]
-Description=%s
-After=network-online.target
-
-[Service]
-Type=simple
-User=%s
-Group=%s
-ExecStart=/home/%s/.local/bin/%s -s
-
-[Install]
-WantedBy=multi-user.target"""
-
-
-"runtime"
-
-
 def main():
     if check("c"):
         wrap(console)
@@ -225,9 +179,6 @@ def main():
         wrapped(service)
     else:
         wrapped(control)
-
-
-"trampoline"
 
 
 if __name__ == "__main__":

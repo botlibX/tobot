@@ -6,6 +6,7 @@
 
 import queue
 import threading
+import _thread
 
 
 from .brokers import Fleet
@@ -63,8 +64,12 @@ class Output(Client):
         self.oqueue.put(None)
         super().stop()
 
+
     def wait(self):
-        self.oqueue.join()
+        try:
+            self.oqueue.join()
+        except Exception:
+            _thread.interrupt_main()
 
 
 def __dir__():
