@@ -18,7 +18,7 @@ from tob.utility import elapsed, extract_date
 from tob.threads import Timed, launch
 
 
-def init():
+def init(config):
     Timers.path = last(Timers.timers) or getpath(Timers.timers)
     delete = []
     for tme, args in items(Timers.timers):

@@ -21,23 +21,6 @@ from .persist import Workdir, moddir, skel
 STARTTIME = time.time()
 
 
-class Config:
-
-    debug = False
-    default = "irc,rss"
-    init  = ""
-    level = "warn"
-    name = os.path.dirname(__file__).split(os.sep)[-1]
-    opts = ""
-    verbose = False
-    version = 136
-
-
-def banner():
-    tme = time.ctime(time.time()).replace("  ", " ")
-    logging.info("%s %s since %s (%s)" % (Config.name.upper(), Config.version, tme, Config.level.upper()))
-
-
 def daemon(verbose=False):
     pid = os.fork()
     if pid != 0:

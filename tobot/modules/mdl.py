@@ -17,7 +17,7 @@ from tob.threads import Repeater
 from tob.utility import elapsed
 
 
-def init():
+def init(config):
     for key in keys(oorzaken):
         if "Psych" not in key:
             continue

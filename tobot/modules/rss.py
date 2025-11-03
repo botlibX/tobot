@@ -29,7 +29,7 @@ from tob.threads import Repeater, launch
 from tob.utility import elapsed, fmt, spl
 
 
-def init():
+def init(config):
     fetcher = Fetcher()
     fetcher.start()
     if fetcher.seenfn:

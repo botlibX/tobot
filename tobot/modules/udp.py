@@ -20,11 +20,11 @@ from tob.threads import launch
 DEBUG = False
 
 
-def init():
-    udpd = UDP()
-    udpd.start()
+def init(config):
+    udp = UDP()
+    udp.start()
     logging.warning("http://%s:%s", Cfg.host, Cfg.port)
-    return udpd
+    return udp
 
 
 class Cfg(Object):

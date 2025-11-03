@@ -17,9 +17,6 @@ from .threads import launch
 from .utility import md5sum
 
 
-level("info")
-
-
 class Mods:
 
     dirs = {}
@@ -64,7 +61,7 @@ def importer(name, pth):
         _thread.interrupt_main()
 
 
-def inits(names):
+def inits(names, config):
     modz = []
     for name in modules():
         if name not in names:
@@ -72,7 +69,7 @@ def inits(names):
         try:
             module = getmod(name)
             if module and "init" in dir(module):
-                thr = launch(module.init)
+                thr = launch(module.init, config)
                 modz.append((module, thr))
         except Exception as ex:
             logging.exception(ex)

@@ -19,7 +19,7 @@ from tob.handler import Event
 from tob.logging import level
 from tob.package import Mods, getmod, inits, modules, sums
 from tob.persist import Workdir, moddir, pidname, skel
-from tob.runtime import Config, daemon, forever, pidfile, privileges
+from tob.runtime import daemon, forever, pidfile, privileges
 from tob.runtime import wrap, wrapped
 from tob.utility import md5sum, parse, spl
 
@@ -31,8 +31,16 @@ CHECKSUM = "fc957b7fd51b8fed35527aed0ae6826b"
 CHECKSUM = ""
 
 
-Config.name = "tobot"
-Config.version = 4
+class Config:
+
+    debug = False
+    default = "irc,rss"
+    init  = ""
+    level = "warn"
+    name = "tobot"
+    opts = ""
+    verbose = False
+    version = 4
 
 
 class CLI(Client):
@@ -69,7 +77,7 @@ def background():
     boot(MODS, CHECKSUM, False)
     Commands.add(cmd, ver)
     pidfile(pidname(Config.name))
-    inits(spl(Config.default))
+    inits(spl(Config.default), Config)
     forever()
 
 
@@ -78,7 +86,7 @@ def console():
     boot(MODS, CHECKSUM)
     Commands.add(cmd, ver)
     csl = Console()
-    for _mod, thr in inits(spl(Config.sets.init)):
+    for _mod, thr in inits(spl(Config.sets.init), Config):
         if "w" in Config.opts:
             thr.join(30.0)
     csl.start()
@@ -102,9 +110,10 @@ def control():
 def service():
     privileges()
     boot(MODS, CHECKSUM, False)
+    banner()
     Commands.add(cmd, ver)
     pidfile(pidname(Config.name))
-    inits(spl(Config.default))
+    inits(spl(Config.default), Config)
     forever()
 
 
@@ -114,6 +123,7 @@ def service():
 def banner():
     tme = time.ctime(time.time()).replace("  ", " ")
     print("%s %s since %s (%s)" % (Config.name.upper(), Config.version, tme, Config.level.upper()))
+    sys.stdout.flush()
 
 
 def boot(mods, checksum, doparse=True):
@@ -123,7 +133,8 @@ def boot(mods, checksum, doparse=True):
         parse(Config, " ".join(sys.argv[1:]))
         Config.level = Config.sets.level or Config.level
     level(Config.level)
-    banner()
+    if "v" in Config.opts:
+        banner()
     Workdir.wdr = Workdir.wdr or os.path.expanduser(f"~/.{Config.name}")
     if "a" in Config.opts:
         Config.sets.init = ",".join(modules())

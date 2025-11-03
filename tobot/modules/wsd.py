@@ -18,7 +18,7 @@ from tob.threads import Repeater
 rand = SystemRandom()
 
 
-def init():
+def init(config):
     event = Event()
     repeater = Repeater(3600.0,  wsd, event)
     repeater.start()
