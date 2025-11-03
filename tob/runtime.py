@@ -10,8 +10,6 @@ import sys
 import time
 
 
-
-
 STARTTIME = time.time()
 
 

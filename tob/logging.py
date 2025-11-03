@@ -17,8 +17,10 @@ LEVELS = {
 }
 
 
-datefmt = "%H:%M:%S"
-format_short = "%(module).3s %(message).76s"
+class Logging:
+
+    datefmt = "%H:%M:%S"
+    format = "%(module).3s %(message).76s"
 
 
 class Formatter(logging.Formatter):
@@ -37,7 +39,7 @@ def level(loglevel="debug"):
         for handler in logger.handlers:
             logger.removeHandler(handler)
         logger.setLevel(lvl)
-        formatter = Formatter(format_short, datefmt=datefmt)
+        formatter = Formatter(Logging.format, datefmt=Logging.datefmt)
         ch = logging.StreamHandler()
         ch.setFormatter(formatter)
         logger.addHandler(ch)
