@@ -19,9 +19,9 @@ sys.path.insert(0, os.getcwd())
 from tob.clients import Client
 from tob.command import command, parse, table
 from tob.handler import Event
-from tob.logging import level
 from tob.package import Mods, modules, sums
 from tob.persist import Workdir, moddir, skel
+from tob.runtime import level
 from tob.threads import launch
 from tob.utility import elapsed
 

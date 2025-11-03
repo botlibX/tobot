@@ -15,12 +15,11 @@ sys.path.insert(0, os.getcwd())
 from tob.clients import Client
 from tob.command import Commands, command, scanner, table
 from tob.handler import Event
-from tob.logging import level
 from tob.methods import parse
 from tob.package import Mods, getmod, inits, modules, sums
 from tob.persist import Workdir, moddir, pidname, skel
 from tob.runtime import daemon, forever, pidfile, privileges
-from tob.runtime import wrap, wrapped
+from tob.runtime import level, wrap, wrapped
 from tob.utility import md5sum, spl
 
 

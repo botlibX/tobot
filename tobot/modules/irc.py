@@ -18,11 +18,10 @@ from tob.brokers import Fleet
 from tob.clients import Output
 from tob.command import command
 from tob.handler import Event
-from tob.logging import LEVELS
 from tob.methods import edit, fmt
 from tob.objects import Object, keys
 from tob.persist import getpath, last, write
-from tob.runtime import NAME
+from tob.runtime import LEVELS, NAME
 from tob.threads import launch
 
 
