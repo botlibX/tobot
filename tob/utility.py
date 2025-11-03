@@ -5,12 +5,9 @@
 
 
 import hashlib
-import logging
 import time
-import _thread
 
 
-from .objects import Default, items
 
 
 FORMATS = [
