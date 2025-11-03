@@ -47,7 +47,7 @@ class Config:
     name = "tobot"
     opts = ""
     verbose = False
-    version = 4
+    version = 5
 
 
 class CLI(Client):
