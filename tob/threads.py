@@ -4,15 +4,14 @@
 "run non-blocking"
 
 
+import logging
 import queue
 import threading
 import time
+import _thread
 
 
-from .utility import excepthook, name
-
-
-threading.excepthook = excepthook
+from .methods import name
 
 
 class Thread(threading.Thread):
@@ -33,12 +32,23 @@ class Thread(threading.Thread):
         yield from dir(self)
 
     def join(self, timeout=None):
-        super().join(timeout)
-        return self.result
+        result = None
+        try:
+            super().join(timeout)
+            result = self.result
+        except (KeyboardInterrupt, EOFError):
+            _thread.interrupt_main()
+        return result
 
     def run(self):
         func, args = self.queue.get()
-        self.result = func(*args)
+        try:
+            self.result = func(*args)
+        except (KeyboardInterrupt, EOFError):
+            _thread.interrupt_main()
+        except Exception as ex:
+            logging.exception(ex)
+            _thread.interrupt_main()
 
 
 class Timy(threading.Timer):
@@ -70,8 +80,9 @@ class Timed:
 
     def start(self):
         self.kwargs["name"] = self.name
-        self.timer = Timy(self.sleep, self.run, *self.args, **self.kwargs)
-        launch(self.timer.start)
+        timer = Timy(self.sleep, self.run, *self.args, **self.kwargs)
+        timer.start()
+        self.timer = timer
 
     def stop(self):
         if self.timer:

@@ -8,8 +8,8 @@ import inspect
 
 
 from .brokers import Fleet
+from .methods import parse
 from .package import getmod, modules
-from .utility import parse
 
 
 class Commands:

@@ -2,7 +2,7 @@
 
 
 from tob.brokers import Fleet
-from tob.utility import fmt, name
+from tob.methods import fmt, name
 
 
 def flt(event):

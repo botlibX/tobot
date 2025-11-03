@@ -23,10 +23,11 @@ from urllib.parse import quote_plus, urlencode
 
 
 from tob.brokers import Fleet
+from tob.methods import fmt
 from tob.objects import Object, update
 from tob.persist import find, fntime, getpath, last, write
 from tob.threads import Repeater, launch
-from tob.utility import elapsed, fmt, spl
+from tob.utility import elapsed, spl
 
 
 def init(config):

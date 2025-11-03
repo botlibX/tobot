@@ -19,11 +19,11 @@ from tob.clients import Output
 from tob.command import command
 from tob.handler import Event
 from tob.logging import LEVELS
+from tob.methods import edit, fmt
 from tob.objects import Object, keys
 from tob.persist import getpath, last, write
 from tob.runtime import NAME
 from tob.threads import launch
-from tob.utility import edit, fmt
 
 
 IGNORE = ["PING", "PONG", "PRIVMSG"] 
@@ -113,7 +113,7 @@ class IRC(Output):
         Output.__init__(self)
         self.buffer = []
         self.cache = {}
-        self.cfg = Config(name)
+        self.cfg = Config()
         self.channels = []
         self.events = Object()
         self.events.authed = threading.Event()
