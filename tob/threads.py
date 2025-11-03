@@ -4,11 +4,9 @@
 "run non-blocking"
 
 
-import logging
 import queue
 import threading
 import time
-import _thread
 
 
 from .utility import excepthook, name

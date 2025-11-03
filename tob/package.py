@@ -12,7 +12,6 @@ import sys
 import _thread
 
 
-from .logging import level
 from .threads import launch
 from .utility import md5sum
 

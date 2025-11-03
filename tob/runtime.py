@@ -4,19 +4,12 @@
 "runtime"
 
 
-import inspect
-import logging
 import os
 import pathlib
 import sys
 import time
 
 
-from .command import parse, table
-from .logging import level
-from .package import Mods, modules, sums
-from .persist import Workdir, moddir, skel
-from .utility import excepthook
 
 
 STARTTIME = time.time()
