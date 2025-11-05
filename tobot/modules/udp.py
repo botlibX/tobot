@@ -12,7 +12,7 @@ import threading
 import time
 
 
-from tob.brokers import Fleet
+from tob.clients import Fleet
 from tob.objects import Object
 from tob.threads import launch
 
@@ -20,7 +20,7 @@ from tob.threads import launch
 DEBUG = False
 
 
-def init(config):
+def init():
     udp = UDP()
     udp.start()
     logging.warning("http://%s:%s", Cfg.host, Cfg.port)

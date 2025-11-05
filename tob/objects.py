@@ -90,7 +90,6 @@ def update(obj, data, empty=True):
     for key, value in items(data):
         if not empty and not value:
             continue
-        #obj[key] = value
         setattr(obj, key, value)
 
 

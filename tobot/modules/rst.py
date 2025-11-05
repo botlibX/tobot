@@ -21,7 +21,7 @@ from tob.threads import launch
 DEBUG = False
 
 
-def init(config):
+def init():
     try:
         rest = REST((Config.hostname, int(Config.port)), RESTHandler)
         rest.start()

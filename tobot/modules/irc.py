@@ -14,14 +14,13 @@ import threading
 import time
 
 
-from tob.brokers import Fleet
-from tob.clients import Output
-from tob.command import command
+from tob.clients import Fleet, Output
+from tob.command import Config, command
 from tob.handler import Event
+from tob.logging import LEVELS
 from tob.methods import edit, fmt
 from tob.objects import Object, keys
 from tob.persist import getpath, last, write
-from tob.runtime import LEVELS, NAME
 from tob.threads import launch
 
 
@@ -31,12 +30,12 @@ IGNORE = ["PING", "PONG", "PRIVMSG"]
 lock = threading.RLock()
 
 
-def  init(config):
-    irc = IRC(config.name)
+def init():
+    irc = IRC()
     irc.start()
     irc.events.joined.wait(30.0)
     if irc.events.joined.is_set():
-        logging.warning(fmt(irc.cfg, skip=["password", "realname", "username"]))
+        logging.warning(fmt(irc.cfg, skip=["name", "password", "realname", "username"]))
     else:
         irc.stop()
     return irc
@@ -44,19 +43,19 @@ def  init(config):
 
 class Config:
 
-    channel = f"#{NAME}"
+    channel = f"#{Config.name}"
     commands = True
     control = "!"
-    name = NAME
-    nick = NAME
+    name = Config.name
+    nick = Config.name
     password = ""
     port = 6667
-    realname = NAME
+    realname = Config.name
     sasl = False
     server = "localhost"
     servermodes = ""
     sleep = 60
-    username = NAME
+    username = Config.name
     users = False
 
     def __init__(self):
@@ -108,7 +107,7 @@ wrapper = TextWrap()
 
 class IRC(Output):
 
-    def __init__(self, name):
+    def __init__(self):
         Output.__init__(self)
         self.buffer = []
         self.cache = {}
@@ -555,7 +554,7 @@ def cb_001(evt):
 def cb_notice(evt):
     bot = Fleet.get(evt.orig)
     if evt.txt.startswith("VERSION"):
-        txt = f"\001VERSION {Config.name.upper()} 140 - {bot.cfg.username}\001"
+        txt = f"\001VERSION {NAME.upper()} 137 - {bot.cfg.username}\001"
         bot.docommand("NOTICE", evt.channel, txt)
 
 

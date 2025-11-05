@@ -11,14 +11,14 @@ import re
 import time
 
 
-from tob.brokers import Fleet
+from tob.clients import Fleet
 from tob.objects import Object, items
 from tob.persist import getpath, last, write
+from tob.repeats import Timed
 from tob.utility import elapsed, extract_date
-from tob.threads import Timed
 
 
-def init(config):
+def init():
     Timers.path = last(Timers.timers) or getpath(Timers.timers)
     delete = []
     for tme, args in items(Timers.timers):

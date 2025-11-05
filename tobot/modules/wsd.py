@@ -10,15 +10,15 @@ import logging
 from random import SystemRandom
 
 
-from tob.brokers import Fleet
+from tob.clients import Fleet
 from tob.handler import Event
-from tob.threads import Repeater
+from tob.repeats import Repeater
 
 
 rand = SystemRandom()
 
 
-def init(config):
+def init():
     event = Event()
     repeater = Repeater(3600.0,  wsd, event)
     repeater.start()

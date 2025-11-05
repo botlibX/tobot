@@ -1,7 +1,7 @@
 # This file is placed in the Public Domain.
 
 
-from tob.brokers import Fleet
+from tob.clients import Fleet
 from tob.methods import fmt, name
 
 

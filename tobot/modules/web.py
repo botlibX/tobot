@@ -26,7 +26,7 @@ PATH = d(d(__file__))
 PATH = j(PATH, "network", "html")
 
 
-def init(config):
+def init():
     if not os.path.exists(j(PATH, 'index.html')):
         logging.warning("no index.html")
         return

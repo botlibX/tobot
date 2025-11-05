@@ -76,17 +76,18 @@ def md5sum(path):
 
 
 def spl(txt):
+    if txt.find(",") == -1:
+        return []
     try:
         result = txt.split(",")
     except (TypeError, ValueError):
-        result = [
-            txt,
-        ]
+        result = []
     return [x for x in result if x]
 
 
 def __dir__():
     return (
+        'check',
         'elapsed',
         'excepthook',
         'extract_date',

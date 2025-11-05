@@ -14,6 +14,7 @@ import time
 
 from .marshal import dump, load
 from .objects import Object, deleted, fqn, search, update
+from .runtime import NAME
 
 
 lock = threading.RLock()
@@ -21,7 +22,7 @@ lock = threading.RLock()
 
 class Workdir:
 
-    wdr = ""
+    wdr = os.path.expanduser(f"~/.{NAME}")
 
 
 class Cache:
@@ -123,7 +124,6 @@ def fntime(daystr):
     if rest:
         timed += float("." + rest)
     return float(timed)
-
 
 
 def last(obj, selector=None):

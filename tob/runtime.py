@@ -10,33 +10,28 @@ import os
 import pathlib
 import sys
 import time
+import threading
+import _thread
+
+
+from .command import modules
+from .threads import launch
+from .utility import spl
 
 
 NAME = os.path.dirname(__file__).split(os.sep)[-1]
 STARTTIME = time.time()
 
 
-LEVELS = {
-    'debug': logging.DEBUG,
-    'info': logging.INFO,
-    'warning': logging.WARNING,
-    'warn': logging.WARNING,
-    'error': logging.ERROR,
-    'critical': logging.CRITICAL
-}
-
-
-class Logging:
-
-    datefmt = "%H:%M:%S"
-    format = "%(module).3s %(message).76s"
-
-
-class Formatter(logging.Formatter):
-
-    def format(self, record):
-        record.module = record.module.upper()
-        return logging.Formatter.format(self, record)
+def check(txt):
+    args = sys.argv[1:]
+    for arg in args:
+        if not arg.startswith("-"):
+            continue
+        for char in txt:
+            if char in arg:
+                return True
+    return False
 
 
 def daemon(verbose=False):
@@ -59,6 +54,18 @@ def daemon(verbose=False):
     os.nice(10)
 
 
+def excepthook(*args):
+    try:
+       type, value, trace = args
+    except ValueError:
+       print(args)
+       type = args[0][0]
+       value = args[0][1]
+    if type not in (KeyboardInterrupt, EOFError):
+        logging.exception(value)
+    os._exit(0)
+
+
 def forever():
     while True:
         try:
@@ -67,19 +74,18 @@ def forever():
             break
 
 
-def level(loglevel="debug"):
-    if loglevel != "none":
-        lvl = LEVELS.get(loglevel)
-        if not lvl:
-            return
-        logger = logging.getLogger()
-        for handler in logger.handlers:
-            logger.removeHandler(handler)
-        logger.setLevel(lvl)
-        formatter = Formatter(Logging.format, datefmt=Logging.datefmt)
-        ch = logging.StreamHandler()
-        ch.setFormatter(formatter)
-        logger.addHandler(ch)
+def inits(pkg, names):
+    res = []
+    for name in sorted(modules(pkg)):
+        if name not in names:
+            continue
+        nme = pkg.__name__ + "." + name
+        module = sys.modules.get(nme, None)
+        if not module or not "init" in dir(module):
+            continue
+        thr = launch(module.init)
+        res.append((module, thr))
+    return res
 
 
 def pidfile(filename):
@@ -120,12 +126,19 @@ def wrap(func):
             termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, old)
 
 
+sys.excepthook = threading.excepthook = excepthook
+
+
 def __dir__():
     return (
         'STARTTIME',
         'boot',
+        'check',
+        'checknr',
+        'checkspl',
         'daemon',
         'forever',
+        'inits',
         'level',
         'pidfile',
         'privileges',

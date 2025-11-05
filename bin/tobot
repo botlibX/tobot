@@ -4,49 +4,33 @@
 
 import inspect
 import json
+import logging
 import os
 import sys
 import time
+import _thread
 
 
 sys.path.insert(0, os.getcwd())
 
 
 from tob.clients import Client
-from tob.command import Commands, command, scan, scanner, table
+from tob.command import Commands, Config, command, modules, scan, scanner
 from tob.handler import Event
+from tob.logging import level
 from tob.methods import parse
-from tob.package import Mods, getmod, inits, modules, sums
 from tob.persist import Workdir, moddir, pidname, skel
-from tob.network import admin
-from tob.runtime import daemon, forever, pidfile, privileges
-from tob.runtime import level, wrap, wrapped
+from tob.runtime import NAME, check, daemon, forever, inits, pidfile
+from tob.runtime import privileges, wrap, wrapped
+from tob.threads import launch
 from tob.utility import md5sum, spl
 
 
-from tobot import modules as MODS
+import tobot.modules as MODS
 
 
-CHECKSUM = "b2bc69d39688b99a12037586a66125e2"
-
-
-"config"
-
-
-class Config:
-
-    debug = False
-    default = "irc,rss"
-    init  = ""
-    level = "warn"
-    name = "tobot"
-    opts = ""
-    dosums = True
-    verbose = False
-    version = 5
-
-
-"clients"
+NAME = sys.argv[0]
+TXT = " ".join(sys.argv[1:])
 
 
 class CLI(Client):
@@ -74,61 +58,45 @@ class Console(CLI):
         return evt
 
 
-"in the beginning"
-
-
-def banner():
-    tme = time.ctime(time.time()).replace("  ", " ")
-    print("%s %s since %s (%s)" % (Config.name.upper(), Config.version, tme, Config.level.upper()))
-    sys.stdout.flush()
-
-
-def boot(mods, checksum, doparse=True):
-    Mods.add("modules", os.path.dirname(inspect.getfile(mods)))
-    Mods.add("mods", moddir())
-    if doparse:
-        parse(Config, " ".join(sys.argv[1:]))
-        Config.level = Config.sets.level or Config.level
-    level(Config.level)
-    if "v" in Config.opts:
-        banner()
-    Workdir.wdr = Workdir.wdr or os.path.expanduser(f"~/.{Config.name}")
-    if "a" in Config.opts:
-        Config.sets.init = ",".join(modules())
-    skel()
-    table()
-    if Config.dosums:
-        sums(checksum)
-    Commands.add(cmd, ver)
-
-
 def cmd(event):
     event.reply(",".join(sorted(Commands.names or Commands.cmds)))
 
 
-def ver(event):
-    event.reply(f"{Config.name.upper()} {Config.version}")
-
-
-"scripts"
+def banner(name, version):
+    tme = time.ctime(time.time()).replace("  ", " ")
+    logger = logging.getLogger()
+    print("%s %s since %s (%s)" % (
+                                   name.upper(),
+                                   version,
+                                   tme,
+                                   logging.getLevelName(logger.getEffectiveLevel())
+                                  ))
+    sys.stdout.flush()
 
 
 def background():
-    daemon("-v" in sys.argv)
+    daemon(check("v"))
     privileges()
-    boot(MODS, CHECKSUM, False)
-    pidfile(pidname(Config.name))
-    inits(spl(Config.default), Config)
+    Commands.add(cmd)
+    pidfile(pidname(NAME))
+    inits(MODS, Config.sets.init or "irc,rss")
     forever()
 
 
 def console():
     import readline # noqa: F401
-    boot(MODS, CHECKSUM)
+    parse(Config, TXT)
+    level(Config.sets.level or "warn")    
+    if "v" in Config.opts:
+        banner(Config.name, Config.version)
+    mods = []
+    if "a" in Config.opts:
+        mods = modules(MODS)
+    scanner(MODS, mods)
+    Commands.add(cmd)
     csl = Console()
-    for _mod, thr in inits(spl(Config.sets.init), Config):
-        if "w" in Config.opts:
-            thr.join(30.0)
+    for _mod, thr in inits(MODS, Config.sets.init or mods):
+        thr.join(30.0)
     csl.start()
     forever()
 
@@ -136,8 +104,8 @@ def console():
 def control():
     if len(sys.argv) == 1:
         return
-    boot(MODS, CHECKSUM)
-    scan(admin)
+    scanner(MODS)
+    Commands.add(cmd)
     csl = CLI()
     evt = Event()
     evt.orig = repr(csl)
@@ -149,25 +117,12 @@ def control():
 
 def service():
     privileges()
-    boot(MODS, CHECKSUM, False)
-    banner()
-    pidfile(pidname(Config.name))
-    inits(spl(Config.default), Config)
+    banner(Confg.name, Config.version)
+    scanner(MODS)
+    Commands.add(cmd)
+    pidfile(pidname(NAME))
+    inits(MODS, Config.sets.init or "irc.rss")
     forever()
-
-
-"runtime"
-
-
-def check(txt):
-    args = sys.argv[1:]
-    for arg in args:
-        if not arg.startswith("-"):
-            continue
-        for char in txt:
-            if char in arg:
-                return True
-    return False
 
 
 def main():

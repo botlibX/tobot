@@ -7,6 +7,7 @@
 
 import inspect
 import os
+import queue
 import shutil
 import sys
 import threading
@@ -17,38 +18,24 @@ sys.path.insert(0, os.getcwd())
 
 
 from tob.clients import Client
-from tob.command import command, parse, scan, table
+from tob.command import Config, command, parse, scan, scanner
 from tob.handler import Event
-from tob.network import admin
-from tob.package import Mods, modules, sums
+from tob.logging import level
 from tob.persist import Workdir, moddir, skel
-from tob.runtime import level
+from tob.runtime import check
 from tob.threads import launch
 from tob.utility import elapsed
 
 
-from tobot import modules as MODS
+import tobot.modules as MODS
 
 
 CHECKSUM = "74c8e52fc1ef4d1f5dc90eae4f2200c4"
 
-
 Workdir.wdr = ".test"
 
 
-events = []
-
-
-class Config:
-
-    debug = False
-    default = "irc,rss"
-    init  = ""
-    level = "warn"
-    name = "tobot"
-    opts = ""
-    verbose = False
-    version = 5
+events = queue.Queue()
 
 
 class CLI(Client):
@@ -75,11 +62,11 @@ class Pool:
         Pool.clients.append(clt)
 
     @staticmethod
-    def init(clz, nr=None):
+    def init(nr=None, verbose=False):
         "initialize client pool."
         Pool.nrcpu = nr or os.cpu_count()
         for _x in range(Pool.nrcpu):
-            clt = clz()
+            clt = CLI()
             clt.start()
             Pool.add(clt)
 
@@ -94,24 +81,26 @@ class Pool:
             Pool.nrlast += 1
 
 
-def banner():
+def banner(name, version):
     tme = time.ctime(time.time()).replace("  ", " ")
-    print("%s %s since %s (%s)" % (Config.name.upper(), Config.version, tme, Config.level.upper()))
+    logger = logging.getLogger()
+    print("%s %s since %s (%s)" % (
+                                   name.upper(),
+                                   version,
+                                   tme,
+                                   logging.getLevelName(logger.getEffectiveLevel())
+                                  ))
+    sys.stdout.flush()
 
 
-def boot(doparse=True):
-    Mods.add("modules", os.path.dirname(inspect.getfile(MODS)))
-    Mods.add("mods", moddir())
-    if doparse:
-        parse(Config, " ".join(sys.argv[1:]))
-        Config.level = Config.sets.level or Config.level
-    Workdir.wdr = Workdir.wdr or os.path.expanduser(f"~/.{Config.name}")
-    level(Config.level)
-    if "a" in Config.opts:
-        Config.sets.init = ",".join(modules())
-    skel()
-    table()
-    sums(CHECKSUM)
+def consume():
+    while True:
+        try:
+            event = events.get()
+            event.wait()
+            events.task_done()
+        except (KeyboardInterrupt, EOFError):
+            os._exit(0)
 
 
 def payload(todo):
@@ -121,28 +110,44 @@ def payload(todo):
             evt.txt = f"{cmd} {ex}"
             evt.type = "command"
             Pool.put(evt)
-            events.append(evt)
+            events.put(evt)
 
 
-def wrapped(func, clt):
-    try:
-        func(clt)
-    except (KeyboardInterrupt, EOFError):
-        pass
-
-
-def wrap(func, clt):
-    import termios
-    old = None
-    try:
-        old = termios.tcgetattr(sys.stdin.fileno())
-    except termios.error:
-        pass
-    try:
-        wrapped(func, clt)
-    finally:
-        if old:
-            termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, old)
+def main():
+    if os.path.exists(Workdir.wdr):
+        shutil.rmtree(Workdir.wdr)
+    clt = CLI()
+    parse(Config, " ".join(sys.argv[1:]))
+    if "v" in Config.opts:
+        banner(Config.name, Config.version)
+    scanner(MODS)
+    args = sys.argv[1:]
+    if "z" in Config.opts:
+        Pool.init(6)
+    else:
+        Pool.init(1)
+    starttime = time.time()
+    thrs = []
+    NRS = Config.index or 1
+    for _x in range(NRS):
+        payload(pre)
+    for _x in range(NRS):
+        thrs.append(launch(payload, examples))
+    for _x in range(NRS):
+        payload(post)
+    for thr in thrs:
+        thr.join()
+    launch(consume)
+    nrevents = events.qsize()
+    events.join()
+    endtime = time.time()
+    lap = elapsed(endtime-starttime)
+    percall = (endtime-starttime)/nrevents
+    nrs = events.qsize()
+    if "v" in Config.opts:
+        print(f"{nrs} events left.")
+        print(f"total: {lap} nrs: {nrevents} call: %.6fs" % percall)
+    sys.exit()
 
 
 examples = {
@@ -184,45 +189,6 @@ post = {
 }
 
 
-def main(clt):
-    Mods.add("modules", os.path.dirname(inspect.getfile(MODS)))
-    Mods.add("mods", moddir())
-    if os.path.exists(Workdir.wdr):
-        shutil.rmtree(Workdir.wdr)
-    boot()
-    scan(admin)
-    if "v" in Config.opts:
-        banner()
-    nr = Config.index or 1
-    if "z" in Config.opts:
-        Pool.init(CLI)
-    else:
-        Pool.init(CLI, 1)
-    starttime = time.time()
-    thrs = []
-    for _x in range(nr):
-        thrs.append(launch(payload, pre))
-    for _x in range(nr):
-        thrs.append(launch(payload, examples))
-    for _x in range(nr):
-        thrs.append(launch(payload, post))
-    for thr in thrs:
-        thr.join()
-    gotcha = []
-    for evt in events:
-        evt.wait()
-        gotcha.append(evt)
-    nrevents = len(events)
-    for evt in gotcha:
-        events.remove(evt)
-    endtime = time.time()
-    lap = elapsed(endtime-starttime)
-    percall = (endtime-starttime)/nrevents
-    if "v" in Config.opts:
-        print(f"{len(events)} events left.")
-        print(f"total: {lap} nrs: {nr} call: %.6fs" % percall)
-    sys.exit()
-
 
 if __name__ == "__main__":
-    wrap(main, CLI)
+    main()
