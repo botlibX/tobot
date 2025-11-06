@@ -57,7 +57,6 @@ def excepthook(*args):
     try:
        type, value, trace = args
     except ValueError:
-       print(args)
        type = args[0][0]
        value = args[0][1]
     if type not in (KeyboardInterrupt, EOFError):
