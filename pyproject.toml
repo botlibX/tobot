@@ -15,6 +15,9 @@ authors = [
 description = "bot in reverse !"
 readme = "README.rst"
 license = "Unlicense"
+dependencies = [
+    'tob',
+]
 classifiers=[
     'Development Status :: 3 - Alpha',
     'Operating System :: Unix',
@@ -31,7 +34,6 @@ classifiers=[
 
 [tool.setuptools]
 packages = [
-    'tob',
     'tobot',
     'tobot.modules',
     'tobot.network',

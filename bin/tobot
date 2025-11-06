@@ -21,16 +21,13 @@ from tob.handler import Event
 from tob.logging import level
 from tob.methods import parse
 from tob.persist import Workdir, moddir, pidname, skel
-from tob.runtime import NAME, check, daemon, forever, inits, pidfile
+from tob.runtime import check, daemon, forever, inits, pidfile
 from tob.runtime import excepthook, privileges, wrap, wrapped
 from tob.threads import launch
 from tob.utility import md5sum, spl
 
 
 import tobot.modules as MODS
-
-
-TXT = " ".join(sys.argv[1:])
 
 
 Config.name = "tobot"
@@ -65,10 +62,6 @@ class Console(CLI):
         return evt
 
 
-def cmd(event):
-    event.reply(",".join(sorted(Commands.names or Commands.cmds)))
-
-
 def banner(name, version):
     tme = time.ctime(time.time()).replace("  ", " ")
     logger = logging.getLogger()
@@ -84,15 +77,17 @@ def banner(name, version):
 def background():
     daemon(check("v"))
     privileges()
+    level("debug")
+    scanner(MODS)
     Commands.add(cmd)
-    pidfile(pidname(NAME))
-    inits(MODS, Config.sets.init or "irc,rss")
+    pidfile(pidname(Config.name))
+    inits(MODS, modules(MODS))
     forever()
 
 
 def console():
     import readline # noqa: F401
-    parse(Config, TXT)
+    parse(Config, " ".join(sys.argv[1:]))
     level(Config.sets.level or "warn")    
     if "v" in Config.opts:
         banner(Config.name, Config.version)
@@ -112,7 +107,7 @@ def control():
     if len(sys.argv) == 1:
         return
     scanner(MODS)
-    Commands.add(cmd)
+    Commands.add(cmd, srv)
     csl = CLI()
     evt = Event()
     evt.orig = repr(csl)
@@ -124,12 +119,37 @@ def control():
 
 def service():
     privileges()
-    banner(Confg.name, Config.version)
+    level("warn")
+    banner(Config.name, Config.version)
     scanner(MODS)
     Commands.add(cmd)
-    pidfile(pidname(NAME))
-    inits(MODS, Config.sets.init or "irc.rss")
+    pidfile(pidname(Config.name))
+    inits(MODS, modules(MODS))
     forever()
+
+
+def cmd(event):
+    event.reply(",".join(sorted(Commands.names or Commands.cmds)))
+
+
+def srv(event):
+    import getpass
+    name = getpass.getuser()
+    event.reply(TXT % (Config.name.upper(), name, name, name, Config.name))
+
+
+TXT = """[Unit]
+Description=%s
+After=network-online.target
+
+[Service]
+Type=simple
+User=%s
+Group=%s
+ExecStart=/home/%s/.local/bin/%s -s
+
+[Install]
+WantedBy=multi-user.target"""
 
 
 def main():
