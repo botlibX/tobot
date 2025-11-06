@@ -23,7 +23,7 @@ from tob.command import Config, command, parse, scan, scanner
 from tob.handler import Event
 from tob.logging import level
 from tob.persist import Workdir, moddir, skel
-from tob.runtime import check
+from tob.runtime import check, excepthook
 from tob.threads import launch
 from tob.utility import elapsed
 
@@ -33,11 +33,14 @@ import tobot.modules as MODS
 
 CHECKSUM = "74c8e52fc1ef4d1f5dc90eae4f2200c4"
 
+
 Workdir.wdr = ".test"
 
 
-events = queue.Queue()
+sys.excepthook = threading.excepthook = excepthook
 
+
+events = queue.Queue()
 
 
 class CLI(Output):
