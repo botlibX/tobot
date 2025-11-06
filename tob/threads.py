@@ -9,9 +9,6 @@ import threading
 import time
 
 
-from .methods import name
-
-
 class Thread(threading.Thread):
 
     def __init__(self, func, *args, daemon=True, **kwargs):
@@ -89,10 +86,40 @@ def launch(func, *args, **kwargs):
     return thread
 
 
+def name(obj, short=False):
+    typ = type(obj)
+    res = ""
+    if "__builtins__" in dir(typ):
+        res = obj.__name__
+    elif "__self__" in dir(obj):
+        res = f"{obj.__self__.__class__.__name__}.{obj.__name__}"
+    elif "__class__" in dir(obj) and "__name__" in dir(obj):
+        res = f"{obj.__class__.__name__}.{obj.__name__}"
+    elif "__class__" in dir(obj):
+        res =  f"{obj.__class__.__module__}.{obj.__class__.__name__}"
+    elif "__name__" in dir(obj):
+        res = f"{obj.__class__.__name__}.{obj.__name__}"
+    if short:
+        res = res.split(".")[-1]
+    return res
+
+
+def threadhook(args):
+    type, value, trace, thread = args
+    exc = value.with_traceback(trace)
+    if type not in (KeyboardInterrupt, EOFError):
+        logging.exception(exc)
+    os._exit(0)
+
+
+threading.excepthook = threadhook
+
+
 def __dir__():
     return (
         'Repeater',
         'Thread',
         'Timed',
-        'launch'
+        'launch',
+        'name'
    )

@@ -16,8 +16,14 @@ import traceback
 from .threads import launch
 
 
-NAME = os.path.dirname(__file__).split(os.sep)[-1]
 STARTTIME = time.time()
+
+
+class Config:
+
+    level = "warn"
+    name = os.path.dirname(__file__).split(os.sep)[-1]
+    version = 137
 
 
 def check(txt):
@@ -103,6 +109,18 @@ def privileges():
     pwnam2 = pwd.getpwnam(getpass.getuser())
     os.setgid(pwnam2.pw_gid)
     os.setuid(pwnam2.pw_uid)
+
+
+def scanner(names=[]):
+    for modname in modules():
+        if modname.startswith("__"):
+            continue
+        if names and modname not in names:
+            continue
+        mod = getmod(modname)
+        if mod:
+            scan(mod)
+
 
 
 def wrapped(func):
