@@ -16,13 +16,14 @@ sys.path.insert(0, os.getcwd())
 
 
 from tob.clients import Client
-from tob.command import Commands, Config, command, modules, scan, scanner
+from tob.command import Commands, Config, command, scan, scanner
 from tob.handler import Event
 from tob.logging import level
 from tob.methods import parse
+from tob.package import Mods, inits, modules
 from tob.persist import Workdir, moddir, pidname, skel
-from tob.runtime import check, daemon, forever, inits, pidfile
-from tob.runtime import excepthook, privileges, wrap, wrapped
+from tob.runtime import check, daemon, forever, pidfile
+from tob.runtime import privileges, threadhook, wrap, wrapped
 from tob.threads import launch
 from tob.utility import md5sum, spl
 
@@ -30,11 +31,15 @@ from tob.utility import md5sum, spl
 import tobot.modules as MODS
 
 
+threading.excepthook = threadhook
+
+
 Config.name = "tobot"
 Config.version = 5
 
 
-sys.excepthook = threading.excepthook = excepthook
+Mods.add("mods", moddir())
+Mods.add("modules", MODS.__path__[0])
 
 
 class CLI(Client):
@@ -78,10 +83,10 @@ def background():
     daemon(check("v"))
     privileges()
     level("debug")
-    scanner(MODS)
+    scanner()
     Commands.add(cmd)
     pidfile(pidname(Config.name))
-    inits(MODS, modules(MODS))
+    inits(modules())
     forever()
 
 
@@ -93,11 +98,11 @@ def console():
         banner(Config.name, Config.version)
     mods = []
     if "a" in Config.opts:
-        mods = modules(MODS)
-    scanner(MODS, mods)
+        mods = modules()
+    scanner(mods)
     Commands.add(cmd)
     csl = Console()
-    for _mod, thr in inits(MODS, Config.sets.init or mods):
+    for _mod, thr in inits(Config.sets.init or mods):
         thr.join(30.0)
     csl.start()
     forever()
@@ -106,7 +111,7 @@ def console():
 def control():
     if len(sys.argv) == 1:
         return
-    scanner(MODS)
+    scanner()
     Commands.add(cmd, srv)
     csl = CLI()
     evt = Event()
@@ -121,10 +126,10 @@ def service():
     privileges()
     level("warn")
     banner(Config.name, Config.version)
-    scanner(MODS)
+    scanner()
     Commands.add(cmd)
     pidfile(pidname(Config.name))
-    inits(MODS, modules(MODS))
+    inits(modules())
     forever()
 
 

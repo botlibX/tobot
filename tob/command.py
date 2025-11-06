@@ -13,6 +13,7 @@ import sys
 
 from .clients import Fleet
 from .methods import parse
+from .package import getmod, modules
 
 
 class Config:
@@ -48,30 +49,6 @@ def command(evt):
     evt.ready()
 
 
-def importer(name, pth):
-    if not os.path.exists(pth):
-        return
-    spec = importlib.util.spec_from_file_location(name, pth)
-    if not spec or not spec.loader:
-        return
-    mod = importlib.util.module_from_spec(spec)
-    if not mod:
-        return
-    sys.modules[name] = mod
-    spec.loader.exec_module(mod)
-    return mod
-
-
-def modules(pkg):
-    path = pkg.__path__[0]
-    if not os.path.exists(path):
-        return []
-    return sorted([
-                   x[:-3].split(".")[-1] for x in os.listdir(path)
-                   if x.endswith(".py") and not x.startswith("__")
-                  ])
-
-
 def scan(module):
     for key, cmdz in inspect.getmembers(module, inspect.isfunction):
         if key.startswith("cb"):
@@ -80,15 +57,13 @@ def scan(module):
             Commands.add(cmdz)
 
 
-def scanner(pkg, names=[]):
-    for modname in dir(pkg):
+def scanner(names=[]):
+    for modname in modules():
         if modname.startswith("__"):
             continue
         if names and modname not in names:
             continue
-        nme = pkg.__name__ + "." + modname
-        path = os.path.join(pkg.__path__[0], modname + ".py")
-        mod = importer(nme, path)
+        mod = getmod(modname)
         if mod:
             scan(mod)
 

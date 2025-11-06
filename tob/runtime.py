@@ -4,14 +4,15 @@
 "runtime"
 
 
+import io
 import logging 
 import os
 import pathlib
 import sys
 import time
+import traceback
 
 
-from .command import modules
 from .threads import launch
 
 
@@ -50,14 +51,17 @@ def daemon(verbose=False):
     os.nice(10)
 
 
-def excepthook(*args):
-    try:
-       type, value, trace = args
-    except ValueError:
-       type = args[0][0]
-       value = args[0][1]
+def threadhook(args):
+    type, value, trace, thread = args
+    exc = value.with_traceback(trace)
     if type not in (KeyboardInterrupt, EOFError):
-        logging.exception(value)
+        logging.exception(exc)
+    os._exit(0)
+
+
+def syshook(type, value, trace):
+    if type not in (KeyboardInterrupt, EOFError):
+        sys.__excepthook__(type, value, trace)
     os._exit(0)
 
 
@@ -69,18 +73,19 @@ def forever():
             break
 
 
-def inits(pkg, names):
-    res = []
-    for name in sorted(modules(pkg)):
-        if name not in names:
-            continue
-        nme = pkg.__name__ + "." + name
-        module = sys.modules.get(nme, None)
-        if not module or "init" not in dir(module):
-            continue
-        thr = launch(module.init)
-        res.append((module, thr))
+def format(exc):
+    res = ""
+    stream = io.StringIO(
+                         traceback.print_exception(
+                                                   type(exc),
+                                                   exc,
+                                                   exc.__traceback__
+                                                  )
+                        )
+    for line in stream.readlines():
+        res += line + "\n"
     return res
+
 
 
 def pidfile(filename):

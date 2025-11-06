@@ -14,7 +14,7 @@ import time
 from tob.clients import Fleet
 from tob.objects import Object, items
 from tob.persist import getpath, last, write
-from tob.repeats import Timed
+from tob.threads import Timed
 from tob.utility import elapsed, extract_date
 
 
