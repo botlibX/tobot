@@ -5,7 +5,6 @@
 
 
 import logging
-import time
 
 
 LEVELS = {

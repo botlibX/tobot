@@ -6,7 +6,6 @@
 
 import queue
 import threading
-import _thread
 
 
 from .handler import Handler

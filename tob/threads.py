@@ -4,13 +4,9 @@
 "non-blocking"
 
 
-import logging
-import os
 import queue
-import sys
 import threading
 import time
-import _thread
 
 
 from .methods import name
