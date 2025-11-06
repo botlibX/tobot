@@ -27,22 +27,19 @@ class Workdir:
 
 class Cache:
 
-    objs = {}
+    objs = Object()
 
     @staticmethod
     def add(path, obj):
-        Cache.objs[path] = obj
+        setattr(Cache.objs, path, obj)
 
     @staticmethod
     def get(path):
-        return Cache.objs.get(path, None)
+        return getattr(Cache.objs, path, None)
 
     @staticmethod
     def update(path, obj):
-        if path in Cache.objs:
-            update(Cache.objs[path], obj)
-        else:
-            Cache.add(path, obj)
+        setattr(Cache.objs, path, obj)
 
 
 def cdir(path):

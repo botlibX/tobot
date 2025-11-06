@@ -18,7 +18,7 @@ import time
 sys.path.insert(0, os.getcwd())
 
 
-from tob.clients import Client
+from tob.clients import Client, Output
 from tob.command import Config, command, parse, scan, scanner
 from tob.handler import Event
 from tob.logging import level
@@ -39,10 +39,11 @@ Workdir.wdr = ".test"
 events = queue.Queue()
 
 
-class CLI(Client):
+
+class CLI(Output):
 
     def __init__(self):
-        Client.__init__(self)
+        Output.__init__(self)
         self.register("command", command)
 
     def raw(self, txt):
@@ -131,11 +132,15 @@ def main():
     thrs = []
     NRS = Config.index or 1
     for _x in range(NRS):
-        payload(pre)
+        thrs.append(launch(payload, pre))
+    for thr in thrs:
+        thr.join()
     for _x in range(NRS):
         thrs.append(launch(payload, examples))
+    for thr in thrs:
+        thr.join()
     for _x in range(NRS):
-        payload(post)
+        thrs.append(launch(payload, post))
     for thr in thrs:
         thr.join()
     launch(consume)

@@ -63,7 +63,6 @@ class Output(Client):
         self.oqueue.put(None)
         super().stop()
 
-
     def wait(self):
         self.oqueue.join()
 
@@ -98,7 +97,7 @@ class Fleet:
     def like(orig):
         for origin in Fleet.clients:
             if orig.split()[0] in origin.split()[0]:
-                yield orig
+                yield origin
 
     @staticmethod
     def say(orig, channel, txt):

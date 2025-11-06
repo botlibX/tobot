@@ -1,11 +1,13 @@
 # This file is placed in the Public Domain.
 
 
-"run non-blocking"
+"non-blocking"
 
 
 import logging
+import os
 import queue
+import sys
 import threading
 import time
 import _thread
@@ -32,9 +34,8 @@ class Thread(threading.Thread):
         yield from dir(self)
 
     def join(self, timeout=None):
-        result = None
         super().join(timeout)
-        return self.result
+        return  self.result
 
     def run(self):
         func, args = self.queue.get()
@@ -49,6 +50,7 @@ def launch(func, *args, **kwargs):
 
 def __dir__():
     return (
+        'Repeater',
         'Thread',
         'launch'
    )

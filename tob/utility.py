@@ -14,7 +14,7 @@ FORMATS = [
     "%Y-%m-%d",
     "%d-%m-%Y",
     "%d-%m",
-    "%m-%d",
+    "%m-%d"
 ]
 
 
@@ -87,9 +87,7 @@ def spl(txt):
 
 def __dir__():
     return (
-        'check',
         'elapsed',
-        'excepthook',
         'extract_date',
         'md5sum',
         'spl'

@@ -35,7 +35,7 @@ packages = [
     'tobot',
     'tobot.modules',
     'tobot.network',
-    'tobot.network.html'
+    'tobot.network.html',
 ]
 include-package-data = true
 

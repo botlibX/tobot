@@ -4,7 +4,6 @@
 "runtime"
 
 
-
 import logging 
 import os
 import pathlib
@@ -126,16 +125,11 @@ def wrap(func):
             termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, old)
 
 
-sys.excepthook = threading.excepthook = excepthook
-
-
 def __dir__():
     return (
         'STARTTIME',
         'boot',
         'check',
-        'checknr',
-        'checkspl',
         'daemon',
         'forever',
         'inits',
