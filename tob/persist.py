@@ -51,8 +51,8 @@ def getpath(obj):
     return store(ident(obj))
 
 
-def moddir():
-    return os.path.join(Workdir.wdr, "mods")
+def moddir(modname=None):
+    return os.path.join(Workdir.wdr, modname or "mods")
 
 
 def pidname(name):

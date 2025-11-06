@@ -73,12 +73,14 @@ def inits(names):
 def modules():
     mods = []
     for name, path in Mods.dirs.items():
+        print(path)
         if not os.path.exists(path):
             continue
         mods.extend([
             x[:-3] for x in os.listdir(path)
             if x.endswith(".py") and not x.startswith("__")
            ])
+    print(mods)
     return sorted(mods)
 
 

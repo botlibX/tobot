@@ -38,6 +38,9 @@ Config.name = "tobot"
 Config.version = 5
 
 
+Workdir.wdr = os.path.expanduser(f"~/.{Config.name}")
+
+
 Mods.add("mods", moddir())
 Mods.add("modules", MODS.__path__[0])
 
