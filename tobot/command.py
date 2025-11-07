@@ -12,11 +12,8 @@ import sys
 
 
 from tob.clients import Fleet
-from tob.objects import Default
+from tob.objects import Object
 from tob.threads import launch
-
-
-from tobot.methods import parse
 
 
 class Mods:
@@ -125,6 +122,61 @@ def scanner(names=[]):
             mod = importer(mname, modpath)
             if mod:
                 scan(mod)
+
+
+"utility"
+
+
+def parse(obj, txt):
+    data = {
+        "args": [],
+        "cmd": "",
+        "gets": Default(),
+        "index": None,
+        "init": "",
+        "opts": "",
+        "otxt": txt,
+        "rest": "",
+        "silent": Default(),
+        "sets": Default(),
+        "txt": ""
+    }
+    for k, v in data.items():
+        setattr(obj, k, getattr(obj, k, v))
+    args = []
+    nr = -1
+    for spli in txt.split():
+        if spli.startswith("-"):
+            try:
+                obj.index = int(spli[1:])
+            except ValueError:
+                obj.opts += spli[1:]
+            continue
+        if "-=" in spli:
+            key, value = spli.split("-=", maxsplit=1)
+            setattr(obj.silent, key, value)
+            setattr(obj.gets, key, value)
+            continue
+        if "==" in spli:
+            key, value = spli.split("==", maxsplit=1)
+            setattr(obj.gets, key, value)
+            continue
+        if "=" in spli:
+            key, value = spli.split("=", maxsplit=1)
+            setattr(obj.sets, key, value)
+            continue
+        nr += 1
+        if nr == 0:
+            obj.cmd = spli
+            continue
+        args.append(spli)
+    if args:
+        obj.args = args
+        obj.txt  = obj.cmd or ""
+        obj.rest = " ".join(obj.args)
+        obj.txt  = obj.cmd + " " + obj.rest
+    else:
+        obj.txt = obj.cmd or ""
 
 
 def __dir__():

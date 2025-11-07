@@ -13,7 +13,7 @@ import time
 
 
 from tob.marshal import dump, load
-from tob.objects import Object, deleted, fqn, search, update
+from tob.objects import Object, items, update
 
 
 lock = threading.RLock()
@@ -140,6 +140,17 @@ def last(obj, selector=None):
 "disk"
 
 
+def deleted(obj):
+    return "__deleted__" in dir(obj) and obj.__deleted__
+
+
+def fqn(obj):
+    kin = str(type(obj)).split()[-1][1:-2]
+    if kin == "type":
+        kin = f"{obj.__module__}.{obj.__name__}"
+    return kin
+
+
 def ident(obj):
     return os.path.join(fqn(obj), *str(datetime.datetime.now()).split())
 
@@ -152,6 +163,22 @@ def read(obj, path):
             except json.decoder.JSONDecodeError as ex:
                 ex.add_note(path)
                 raise ex
+
+
+def search(obj, selector, matching=False):
+    res = False
+    for key, value in items(selector):
+        val = getattr(obj, key, None)
+        if not val:
+            continue
+        if matching and value == val:
+            res = True
+        elif str(value).lower() in str(val).lower():
+            res = True
+        else:
+            res = False
+            break
+    return res
 
 
 def write(obj, path=None):
@@ -172,6 +199,7 @@ def __dir__():
         'cdir',
         'find',
         'fntime',
+        'fqn',
         'read',
         'skel',
         'types',

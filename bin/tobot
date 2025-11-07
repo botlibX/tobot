@@ -21,8 +21,8 @@ from tob.threads import launch
 
 
 from tobot.command import Commands, Mods, command, inits, modules, scan, scanner
+from tobot.command import parse
 from tobot.logging import level
-from tobot.methods import parse
 from tobot.persist import Workdir, moddir, pidname, skel
 from tobot.runtime import Config, check, daemon, forever, pidfile
 from tobot.runtime import privileges, wrap, wrapped

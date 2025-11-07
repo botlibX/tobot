@@ -4,8 +4,8 @@
 "show modules"
 
 
+from tobot.command import modules
 
 
 def mod(event):
-    from . import modules
     event.reply(",".join(modules()))

@@ -18,26 +18,28 @@ import time
 sys.path.insert(0, os.getcwd())
 
 
-from tob.clients import Client, Output
-from tob.command import Config, command, parse, scan, scanner
+from tob.clients import Client, Output, Pool
 from tob.handler import Event
-from tob.logging import level
-from tob.persist import Workdir, moddir, skel
-from tob.runtime import check, excepthook
-from tob.threads import launch
-from tob.utility import elapsed
+from tob.threads import launch, threadhook
+
+
+from tobot.command import Mods, command, parse, scan, scanner
+from tobot.logging import level
+from tobot.persist import Workdir, moddir, skel
+from tobot.runtime import Config, check
+from tobot.utility import elapsed
 
 
 import tobot.modules as MODS
 
 
-CHECKSUM = "74c8e52fc1ef4d1f5dc90eae4f2200c4"
+Mods.add("modules", MODS.__path__[0])
 
 
 Workdir.wdr = ".test"
 
 
-sys.excepthook = threading.excepthook = excepthook
+threading.excepthook = threadhook
 
 
 events = queue.Queue()
@@ -53,37 +55,6 @@ class CLI(Output):
         if "v" in Config.opts:
             print(txt)
 
-
-class Pool:
-
-    clients = []
-    lock = threading.RLock()
-    nrcpu = 1
-    nrlast = 0
-
-    @staticmethod
-    def add(clt):
-        "add client to pool."
-        Pool.clients.append(clt)
-
-    @staticmethod
-    def init(nr=None, verbose=False):
-        "initialize client pool."
-        Pool.nrcpu = nr or os.cpu_count()
-        for _x in range(Pool.nrcpu):
-            clt = CLI()
-            clt.start()
-            Pool.add(clt)
-
-    @staticmethod
-    def put(evt):
-        "dispatch to client."
-        with Pool.lock:
-            if Pool.nrlast >= Pool.nrcpu-1:
-                Pool.nrlast = 0
-            clt = Pool.clients[Pool.nrlast]
-            clt.put(evt)
-            Pool.nrlast += 1
 
 
 def banner(name, version):
@@ -111,26 +82,27 @@ def consume():
 def payload(todo):
     for cmd, example in todo.items():
         for ex in example:
+            print(ex)
             evt = Event()
             evt.txt = f"{cmd} {ex}"
             evt.type = "command"
             Pool.put(evt)
+            print(evt)
             events.put(evt)
 
 
 def main():
     if os.path.exists(Workdir.wdr):
         shutil.rmtree(Workdir.wdr)
-    clt = CLI()
     parse(Config, " ".join(sys.argv[1:]))
     if "v" in Config.opts:
         banner(Config.name, Config.version)
-    scanner(MODS)
+    scanner()
     args = sys.argv[1:]
     if "z" in Config.opts:
-        Pool.init(6)
+        Pool.init(CLI, 6)
     else:
-        Pool.init(1)
+        Pool.init(CLI, 1)
     starttime = time.time()
     thrs = []
     NRS = Config.index or 1
