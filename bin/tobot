@@ -34,6 +34,7 @@ import tobot.modules as MODS
 Workdir.wdr = os.path.expanduser(f"~/.{Config.name}")
 
 
+Mods.add("mods", "mods")
 Mods.add("mods", moddir())
 Mods.add("modules", MODS.__path__[0])
 

@@ -13,7 +13,7 @@ import time
 from tob.clients import Fleet
 from tob.handler import Event
 from tob.objects import Object, construct, keys
-from tob.threads import Repeater
+from tob.repeats import Repeater
 
 
 from tobot.utility import elapsed

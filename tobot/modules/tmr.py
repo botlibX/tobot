@@ -13,7 +13,7 @@ import time
 
 from tob.clients import Fleet
 from tob.objects import Object, items
-from tob.threads import Timed
+from tob.repeats import Timed
 
 
 from tobot.persist import getpath, last, write

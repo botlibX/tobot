@@ -24,7 +24,8 @@ from urllib.parse import quote_plus, urlencode
 
 from tob.clients import Fleet
 from tob.objects import Object, update
-from tob.threads import Repeater, launch
+from tob.repeats import Repeater
+from tob.threads import launch
 
 
 from tobot.methods import fmt
