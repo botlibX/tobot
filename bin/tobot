@@ -16,14 +16,14 @@ sys.path.insert(0, os.getcwd())
 
 
 from tob.clients import Client
-from tob.command import Commands, Mods, command, inits, modules, scan, scanner
 from tob.handler import Event
-from tob.methods import parse
-from tob.persist import Workdir, moddir, pidname, skel
 from tob.threads import launch
 
 
+from tobot.command import Commands, Mods, command, inits, modules, scan, scanner
 from tobot.logging import level
+from tobot.methods import parse
+from tobot.persist import Workdir, moddir, pidname, skel
 from tobot.runtime import Config, check, daemon, forever, pidfile
 from tobot.runtime import privileges, wrap, wrapped
 

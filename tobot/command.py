@@ -11,11 +11,13 @@ import os
 import sys
 
 
-from .clients import Fleet
-from .methods import parse
-from .objects import Default
-from .threads import launch
+from tob.clients import Fleet
+from tob.objects import Default
+from tob.threads import launch
 
+
+
+from tobot.methods import parse
 
 class Mods:
 

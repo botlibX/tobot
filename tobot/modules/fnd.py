@@ -7,10 +7,8 @@
 import time
 
 
-from tob.methods import fmt
-from tob.persist import find, fntime, types
-
-
+from tobot.methods import fmt
+from tobot.persist import find, fntime, types
 from tobot.utility import elapsed
 
 

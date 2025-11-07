@@ -8,9 +8,9 @@ import time
 
 
 from tob.objects import Object
-from tob.persist import find, fntime, write
 
 
+from tobot.persist import find, fntime, write
 from tobot.utility import elapsed
 
 

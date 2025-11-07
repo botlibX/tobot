@@ -4,7 +4,7 @@
 "methods"
 
 
-from .objects import Default, items
+from tob.objects import Default, items
 
 
 def edit(obj, setter, skip=True):

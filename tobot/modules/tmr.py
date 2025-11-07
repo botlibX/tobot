@@ -13,10 +13,10 @@ import time
 
 from tob.clients import Fleet
 from tob.objects import Object, items
-from tob.persist import getpath, last, write
 from tob.threads import Timed
 
 
+from tobot.persist import getpath, last, write
 from tobot.utility import elapsed, extract_date
 
 

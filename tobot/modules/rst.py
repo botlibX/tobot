@@ -14,8 +14,10 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 
 
 from tob.objects import Object
-from tob.persist import store, types
 from tob.threads import launch
+
+
+from tobot.persist import store, types
 
 
 DEBUG = False

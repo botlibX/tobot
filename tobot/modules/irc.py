@@ -15,15 +15,15 @@ import time
 
 
 from tob.clients import Fleet, Output
-from tob.command import command
 from tob.handler import Event
-from tob.methods import edit, fmt
 from tob.objects import Object, keys
-from tob.persist import getpath, last, write
 from tob.threads import launch
 
 
+from tobot.command import command
 from tobot.logging import LEVELS
+from tobot.methods import edit, fmt
+from tobot.persist import getpath, last, write
 from tobot.runtime import Config
 from tobot.utility import spl
 

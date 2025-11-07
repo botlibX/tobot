@@ -2,7 +2,9 @@
 
 
 from tob.clients import Fleet
-from tob.methods import fmt, name
+
+
+from tobot.methods import fmt, name
 
 
 def flt(event):

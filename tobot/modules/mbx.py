@@ -9,11 +9,11 @@ import os
 import time
 
 
-from tob.methods import fmt
 from tob.objects import Object, keys, update
-from tob.persist import find, write
 
 
+from tobot.methods import fmt
+from tobot.persist import find, write
 from tobot.utility import elapsed, extract_date
 
 
