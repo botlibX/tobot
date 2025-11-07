@@ -9,7 +9,9 @@ import time
 
 from tob.objects import Object
 from tob.persist import find, fntime, write
-from tob.utility import elapsed
+
+
+from tobot.utility import elapsed
 
 
 class Todo(Object):

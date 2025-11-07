@@ -8,8 +8,8 @@ import threading
 import time
 
 
-from tob.runtime import STARTTIME
-from tob.utility import elapsed
+from tobot.runtime import STARTTIME
+from tobot.utility import elapsed
 
 
 def thr(event):

@@ -16,26 +16,19 @@ sys.path.insert(0, os.getcwd())
 
 
 from tob.clients import Client
-from tob.command import Commands, Config, command, scan, scanner
+from tob.command import Commands, Mods, command, inits, modules, scan, scanner
 from tob.handler import Event
-from tob.logging import level
 from tob.methods import parse
-from tob.package import Mods, inits, modules
 from tob.persist import Workdir, moddir, pidname, skel
-from tob.runtime import check, daemon, forever, pidfile
-from tob.runtime import privileges, threadhook, wrap, wrapped
 from tob.threads import launch
-from tob.utility import md5sum, spl
+
+
+from tobot.logging import level
+from tobot.runtime import Config, check, daemon, forever, pidfile
+from tobot.runtime import privileges, wrap, wrapped
 
 
 import tobot.modules as MODS
-
-
-threading.excepthook = threadhook
-
-
-Config.name = "tobot"
-Config.version = 5
 
 
 Workdir.wdr = os.path.expanduser(f"~/.{Config.name}")
@@ -89,7 +82,7 @@ def background():
     scanner()
     Commands.add(cmd)
     pidfile(pidname(Config.name))
-    inits(modules())
+    inits()
     forever()
 
 

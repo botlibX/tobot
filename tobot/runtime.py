@@ -13,7 +13,7 @@ import time
 import traceback
 
 
-from .threads import launch
+from tob.threads import launch
 
 
 STARTTIME = time.time()
@@ -55,20 +55,6 @@ def daemon(verbose=False):
     os.umask(0)
     os.chdir("/")
     os.nice(10)
-
-
-def threadhook(args):
-    type, value, trace, thread = args
-    exc = value.with_traceback(trace)
-    if type not in (KeyboardInterrupt, EOFError):
-        logging.exception(exc)
-    os._exit(0)
-
-
-def syshook(type, value, trace):
-    if type not in (KeyboardInterrupt, EOFError):
-        sys.__excepthook__(type, value, trace)
-    os._exit(0)
 
 
 def forever():
@@ -120,7 +106,6 @@ def scanner(names=[]):
         mod = getmod(modname)
         if mod:
             scan(mod)
-
 
 
 def wrapped(func):

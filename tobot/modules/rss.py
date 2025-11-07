@@ -27,7 +27,9 @@ from tob.methods import fmt
 from tob.objects import Object, update
 from tob.persist import find, fntime, getpath, last, write
 from tob.threads import Repeater, launch
-from tob.utility import elapsed, spl
+
+
+from tobot.utility import elapsed, spl
 
 
 def init():

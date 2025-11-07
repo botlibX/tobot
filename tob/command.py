@@ -14,6 +14,18 @@ import sys
 from .clients import Fleet
 from .methods import parse
 from .objects import Default
+from .threads import launch
+
+
+class Mods:
+
+    dirs = {}
+
+    @staticmethod
+    def add(name, path=None):
+        if path is None:
+            path = name
+        Mods.dirs[name] = path
 
 
 class Commands:
@@ -56,65 +68,32 @@ def importer(name, pth):
     return mod
 
 
-def modules(path):
-    if not os.path.exists(path):
-        return []
-    return sorted([
-                   x[:-3].split(".")[-1] for x in os.listdir(path)
-                   if x.endswith(".py") and not x.startswith("__")
-                  ])
+def inits(names):
+    modz = []
+    for name in names:
+        for modname, path in Mods.dirs.items():
+            modpath = os.path.join(path, name + ".py")
+            if not os.path.exists(modpath):
+                continue
+        pkgname = path.split(os.sep)[-1]
+        mname = ".".join((pkgname, name))
+        mod = importer(mname, modpath)
+        if mod and "init" in dir(mod):
+            thr = launch(mod.init)
+            modz.append((mod, thr))
+    return modz
 
 
-def parse(obj, txt):
-    data = {
-        "args": [],
-        "cmd": "",
-        "gets": Default(),
-        "index": None,
-        "init": "",
-        "opts": "",
-        "otxt": txt,
-        "rest": "",
-        "silent": Default(),
-        "sets": Default(),
-        "txt": ""
-    }
-    for k, v in data.items():
-        setattr(obj, k, getattr(obj, k, v))
-    args = []
-    nr = -1
-    for spli in txt.split():
-        if spli.startswith("-"):
-            try:
-                obj.index = int(spli[1:])
-            except ValueError:
-                obj.opts += spli[1:]
+def modules():
+    mods = []
+    for name, path in Mods.dirs.items():
+        if not os.path.exists(path):
             continue
-        if "-=" in spli:
-            key, value = spli.split("-=", maxsplit=1)
-            obj.silent[key] = value
-            obj.gets[key] = value
-            continue
-        if "==" in spli:
-            key, value = spli.split("==", maxsplit=1)
-            obj.gets[key] = value
-            continue
-        if "=" in spli:
-            key, value = spli.split("=", maxsplit=1)
-            obj.sets[key] = value
-            continue
-        nr += 1
-        if nr == 0:
-            obj.cmd = spli
-            continue
-        args.append(spli)
-    if args:
-        obj.args = args
-        obj.txt  = obj.cmd or ""
-        obj.rest = " ".join(obj.args)
-        obj.txt  = obj.cmd + " " + obj.rest
-    else:
-        obj.txt = obj.cmd or ""
+        mods.extend([
+            x[:-3] for x in os.listdir(path)
+            if x.endswith(".py") and not x.startswith("__")
+        ])
+    return sorted(mods)
 
 
 def scan(module):
@@ -125,14 +104,17 @@ def scan(module):
             Commands.add(cmdz)
 
 
-def scanner(path, names=[]):
-    pkgname = path.split(os.sep)[-1]
-    for modname in modules(path):
-        if names and modname not in names:
-            continue
-        nme = pkgname + "." + modname
-        path = os.path.join(path, modname + ".py")
-        mod = importer(nme, path)
+def scanner(names=[]):
+    if not names:
+        names = modules()
+    for name in names:
+        for modname, path in Mods.dirs.items():
+            modpath = os.path.join(path, name + ".py")
+            if not os.path.exists(modpath):
+                continue
+        pkgname = path.split(os.sep)[-1]
+        mname = ".".join((pkgname, name))
+        mod = importer(mname, modpath)
         if mod:
             scan(mod)
 
@@ -144,6 +126,5 @@ def __dir__():
         'importer',
         'modules',
         'scan',
-        'scanner',
-        'table'
+        'scanner'
     )

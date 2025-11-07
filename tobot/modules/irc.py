@@ -15,13 +15,17 @@ import time
 
 
 from tob.clients import Fleet, Output
-from tob.command import Config, command
+from tob.command import command
 from tob.handler import Event
-from tob.logging import LEVELS
 from tob.methods import edit, fmt
 from tob.objects import Object, keys
 from tob.persist import getpath, last, write
 from tob.threads import launch
+
+
+from tobot.logging import LEVELS
+from tobot.runtime import Config
+from tobot.utility import spl
 
 
 IGNORE = ["PING", "PONG", "PRIVMSG"] 
