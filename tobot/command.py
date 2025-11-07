@@ -16,8 +16,8 @@ from tob.objects import Default
 from tob.threads import launch
 
 
-
 from tobot.methods import parse
+
 
 class Mods:
 
@@ -45,6 +45,12 @@ class Commands:
     @staticmethod
     def get(cmd):
         return Commands.cmds.get(cmd, None)
+
+
+class Default(Object):
+
+    def __getattr__(self, key):
+        return self.__dict__.get(key, "")
 
 
 def command(evt):
