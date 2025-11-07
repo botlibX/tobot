@@ -23,7 +23,7 @@ class Config:
 
     level = "warn"
     name = os.path.dirname(__file__).split(os.sep)[-1]
-    version = 137
+    version = 6
 
 
 def check(txt):
@@ -65,21 +65,6 @@ def forever():
             break
 
 
-def format(exc):
-    res = ""
-    stream = io.StringIO(
-                         traceback.print_exception(
-                                                   type(exc),
-                                                   exc,
-                                                   exc.__traceback__
-                                                  )
-                        )
-    for line in stream.readlines():
-        res += line + "\n"
-    return res
-
-
-
 def pidfile(filename):
     if os.path.exists(filename):
         os.unlink(filename)
@@ -95,17 +80,6 @@ def privileges():
     pwnam2 = pwd.getpwnam(getpass.getuser())
     os.setgid(pwnam2.pw_gid)
     os.setuid(pwnam2.pw_uid)
-
-
-def scanner(names=[]):
-    for modname in modules():
-        if modname.startswith("__"):
-            continue
-        if names and modname not in names:
-            continue
-        mod = getmod(modname)
-        if mod:
-            scan(mod)
 
 
 def wrapped(func):
@@ -132,12 +106,9 @@ def wrap(func):
 def __dir__():
     return (
         'STARTTIME',
-        'boot',
         'check',
         'daemon',
         'forever',
-        'inits',
-        'level',
         'pidfile',
         'privileges',
         'wrap',

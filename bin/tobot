@@ -83,7 +83,7 @@ def background():
     scanner()
     Commands.add(cmd)
     pidfile(pidname(Config.name))
-    inits()
+    inits(modules())
     forever()
 
 
