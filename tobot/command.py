@@ -114,11 +114,11 @@ def scanner(names=[]):
             modpath = os.path.join(path, name + ".py")
             if not os.path.exists(modpath):
                 continue
-        pkgname = path.split(os.sep)[-1]
-        mname = ".".join((pkgname, name))
-        mod = importer(mname, modpath)
-        if mod:
-            scan(mod)
+            pkgname = path.split(os.sep)[-1] or path
+            mname = ".".join((pkgname, name))
+            mod = importer(mname, modpath)
+            if mod:
+                scan(mod)
 
 
 def __dir__():

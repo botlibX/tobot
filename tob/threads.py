@@ -9,6 +9,7 @@ import os
 import queue
 import threading
 import time
+import _thread
 
 
 class Thread(threading.Thread):
@@ -66,7 +67,7 @@ def threadhook(args):
     exc = value.with_traceback(trace)
     if type not in (KeyboardInterrupt, EOFError):
         logging.exception(exc)
-    os._exit(0)
+    _thread.interrupt_main()
 
 
 threading.excepthook = threadhook
