@@ -23,21 +23,21 @@ class Encoder(json.JSONEncoder):
                 return repr(o)
 
 
-def dump(*args, **kw):
+def dump(*args, **kw) -> None:
     kw["cls"] = Encoder
     return json.dump(*args, **kw)
 
 
-def dumps(*args, **kw):
+def dumps(*args, **kw) -> str:
     kw["cls"] = Encoder
     return json.dumps(*args, **kw)
 
 
-def load(s, *args, **kw):
+def load(s, *args, **kw) -> dict | list | str | float | int | bool:
     return json.load(s, *args, **kw)
 
 
-def loads(s, *args, **kw):
+def loads(s, *args, **kw) -> dict | list | str | float | int | bool:
     return json.loads(s, *args, **kw)
 
 

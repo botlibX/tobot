@@ -8,7 +8,7 @@ import threading
 import time
 
 
-from .threads import launch, name
+from tob.threads import launch, name
 
 
 class Timy(threading.Timer):
@@ -34,24 +34,24 @@ class Timed:
         self.target = time.time() + self.sleep
         self.timer = None
 
-    def run(self):
+    def run(self) -> None:
         self.timer.latest = time.time()
         self.func(*self.args)
 
-    def start(self):
+    def start(self) -> None:
         self.kwargs["name"] = self.name
         timer = Timy(self.sleep, self.run, *self.args, **self.kwargs)
         timer.start()
         self.timer = timer
 
-    def stop(self):
+    def stop(self) -> None:
         if self.timer:
             self.timer.cancel()
 
 
 class Repeater(Timed):
 
-    def run(self):
+    def run(self) -> None:
         launch(self.start)
         super().run()
 

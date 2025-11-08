@@ -12,6 +12,9 @@ import time
 import _thread
 
 
+from typing import Any
+
+
 class Thread(threading.Thread):
 
     def __init__(self, func, *args, daemon=True, **kwargs):
@@ -29,22 +32,22 @@ class Thread(threading.Thread):
     def __next__(self):
         yield from dir(self)
 
-    def join(self, timeout=None):
+    def join(self, timeout=None) -> Any:
         super().join(timeout)
         return  self.result
 
-    def run(self):
+    def run(self) -> None:
         func, args = self.queue.get()
         self.result = func(*args)
 
 
-def launch(func, *args, **kwargs):
+def launch(func, *args, **kwargs) -> Thread:
     thread = Thread(func, *args, **kwargs)
     thread.start()
     return thread
 
 
-def name(obj, short=False):
+def name(obj, short=False) -> str:
     typ = type(obj)
     res = ""
     if "__builtins__" in dir(typ):
@@ -62,7 +65,7 @@ def name(obj, short=False):
     return res
 
 
-def threadhook(args):
+def threadhook(args) -> None:
     type, value, trace, thread = args
     exc = value.with_traceback(trace)
     if type not in (KeyboardInterrupt, EOFError):

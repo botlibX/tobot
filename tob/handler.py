@@ -9,7 +9,8 @@ import threading
 import time
 
 
-from .threads import launch
+from tob.objects import Object
+from tob.threads import launch
 
 
 class Event:
@@ -21,16 +22,16 @@ class Event:
         self.ctime = time.time()
         self.orig = ""
         self.result = {}
-        self.txt = ""
+        self.text = ""
         self.type = "event"
 
-    def ready(self):
+    def ready(self) -> None:
         self._ready.set()
 
-    def reply(self, txt):
-        self.result[time.time()] = txt
+    def reply(self, text) -> None:
+        self.result[time.time()] = text
 
-    def wait(self, timeout=None):
+    def wait(self, timeout=None) -> None:
         self._ready.wait()
         if self._thr:
             self._thr.join(timeout)
@@ -39,18 +40,18 @@ class Event:
 class Handler:
 
     def __init__(self):
-        self.cbs = {}
+        self.cbs = Object()
         self.queue = queue.Queue()
 
-    def callback(self, event):
-        func = self.cbs.get(event.type, None)
+    def callback(self, event) -> None:
+        func = getattr(self.cbs, event.type, None)
         if func:
-            name = event.txt and event.txt.split()[0]
+            name = event.text and event.text.split()[0]
             event._thr = launch(func, event, name=name)
         else:
             event.ready()
 
-    def loop(self):
+    def loop(self) -> None:
         while True:
             event = self.poll()
             if event is None:
@@ -58,19 +59,19 @@ class Handler:
             event.orig = repr(self)
             self.callback(event)
 
-    def poll(self):
+    def poll(self) -> Event:
         return self.queue.get()
 
-    def put(self, event):
+    def put(self, event) -> None:
         self.queue.put(event)
 
-    def register(self, type, callback):
-        self.cbs[type] = callback
+    def register(self, type, callback) -> None:
+        setattr(self.cbs, type, callback)
 
-    def start(self):
+    def start(self) -> None:
         launch(self.loop)
 
-    def stop(self):
+    def stop(self) -> None:
         self.queue.put(None)
 
 

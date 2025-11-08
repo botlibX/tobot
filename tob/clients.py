@@ -8,8 +8,12 @@ import queue
 import threading
 
 
-from .handler import Handler
-from .threads import launch
+from typing import Any, Generator, List, ValuesView
+
+
+from tob.handler import Handler
+from tob.objects import Object, values
+from tob.threads import launch
 
 
 class Client(Handler):
@@ -21,11 +25,11 @@ class Client(Handler):
         self.silent = True
         Fleet.add(self)
 
-    def announce(self, txt):
+    def announce(self, text) -> None:
         if not self.silent:
-            self.raw(txt)
+            self.raw(text)
 
-    def display(self, event):
+    def display(self, event) -> None:
         with self.olock:
             for tme in sorted(event.result):
                 self.dosay(
@@ -33,19 +37,22 @@ class Client(Handler):
                            event.result[tme]
                           )
 
-    def dosay(self, channel, txt):
-        self.say(channel, txt)
+    def dosay(self, channel, text) -> None:
+        self.say(channel, text)
 
-    def raw(self, txt):
+    def raw(self, text) -> None:
         raise NotImplementedError("raw")
 
-    def say(self, channel, txt):
-        self.raw(txt)
+    def say(self, channel, text) -> None:
+        self.raw(text)
+
+    def wait(self) -> None:
+        self.oqueue.join()    
 
 
 class Output(Client):
 
-    def output(self):
+    def output(self) -> None:
         while True:
             event = self.oqueue.get()
             if event is None:
@@ -54,57 +61,56 @@ class Output(Client):
             self.display(event)
             self.oqueue.task_done()
 
-    def start(self):
+    def start(self) -> None:
         launch(self.output)
         super().start()
 
-    def stop(self):
+    def stop(self) -> None:
         self.oqueue.put(None)
         super().stop()
-
-    def wait(self):
-        self.oqueue.join()
 
 
 class Fleet:
 
-    clients = {}
+    clients = Object()
 
     @staticmethod
-    def add(client):
-        Fleet.clients[repr(client)] = client
+    def add(client) -> None:
+        setattr(Fleet.clients, repr(client), client)
 
     @staticmethod
-    def all():
-        return Fleet.clients.values()
+    def all() -> ValuesView[Any]:
+        return values(Fleet.clients)
 
     @staticmethod
-    def announce(txt):
+    def announce(text) -> None:
         for client in Fleet.all():
-            client.announce(txt)
+            client.announce(text)
 
     @staticmethod
-    def display(evt):
-        client = Fleet.get(evt.orig)
-        client.display(evt)
+    def display(event) -> None:
+        client = Fleet.get(event.orig)
+        if client:
+            client.display(event)
 
     @staticmethod
-    def get(orig):
-        return Fleet.clients.get(orig, None)
+    def get(origin) -> Client | None:
+        return getattr(Fleet.clients, origin, None)
 
     @staticmethod
-    def like(orig):
-        for origin in Fleet.clients:
-            if orig.split()[0] in origin.split()[0]:
-                yield origin
+    def like(origin) -> Generator[Client]:
+        for orig in Fleet.clients:
+            if origin.split()[0] in orig.split()[0]:
+                yield orig
 
     @staticmethod
-    def say(orig, channel, txt):
+    def say(orig, channel, txt) -> None:
         client = Fleet.get(orig)
-        client.say(channel, txt)
+        if client:
+            client.say(channel, txt)
 
     @staticmethod
-    def shutdown():
+    def shutdown() -> None:
         for client in Fleet.all():
             client.wait()
             client.stop()
@@ -112,30 +118,30 @@ class Fleet:
 
 class Pool:
 
-    clients = []
+    clients: List[Client] = []
     lock = threading.RLock()
     nrcpu = 1
     nrlast = 0
 
     @staticmethod
-    def add(clt):
-        Pool.clients.append(clt)
+    def add(client) -> None:
+        Pool.clients.append(client)
 
     @staticmethod
-    def init(cls, nr=None, verbose=False):
-        Pool.nrcpu = nr or os.cpu_count()
+    def init(cls, nr, verbose=False) -> None:
+        Pool.nrcpu = nr
         for _x in range(Pool.nrcpu):
             clt = cls()
             clt.start()
             Pool.add(clt)
 
     @staticmethod
-    def put(evt):
+    def put(event) -> None:
         with Pool.lock:
             if Pool.nrlast >= Pool.nrcpu-1:
                 Pool.nrlast = 0
             clt = Pool.clients[Pool.nrlast]
-            clt.put(evt)
+            clt.put(event)
             Pool.nrlast += 1
 
 

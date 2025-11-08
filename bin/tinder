@@ -82,12 +82,10 @@ def consume():
 def payload(todo):
     for cmd, example in todo.items():
         for ex in example:
-            print(ex)
             evt = Event()
             evt.txt = f"{cmd} {ex}"
             evt.type = "command"
             Pool.put(evt)
-            print(evt)
             events.put(evt)
 
 
@@ -100,7 +98,7 @@ def main():
     scanner()
     args = sys.argv[1:]
     if "z" in Config.opts:
-        Pool.init(CLI, 6)
+        Pool.init(CLI, os.cpu_count())
     else:
         Pool.init(CLI, 1)
     starttime = time.time()

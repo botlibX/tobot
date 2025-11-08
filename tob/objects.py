@@ -4,6 +4,9 @@
 "a clean namespace"
 
 
+from typing import KeysView, ItemsView, ValuesView
+
+
 class Object:
 
     def __contains__(self, key):
@@ -19,7 +22,7 @@ class Object:
         return str(self.__dict__)
 
 
-def construct(obj, *args, **kwargs):
+def construct(obj, *args, **kwargs) -> None:
     if args:
         val = args[0]
         if isinstance(val, zip):
@@ -32,26 +35,26 @@ def construct(obj, *args, **kwargs):
         update(obj, kwargs)
 
 
-def items(obj):
+def items(obj) -> ItemsView:
     if isinstance(obj, dict):
         return obj.items()
     return obj.__dict__.items()
 
 
-def keys(obj):
+def keys(obj) -> KeysView:
     if isinstance(obj, dict):
         return obj.keys()
     return obj.__dict__.keys()
 
 
-def update(obj, data, empty=True):
+def update(obj, data={}, empty=True) -> None:
     for key, value in items(data):
         if not empty and not value:
             continue
         setattr(obj, key, value)
 
 
-def values(obj):
+def values(obj) -> ValuesView:
     if isinstance(obj, dict):
         return obj.values()
     return obj.__dict__.values()
