@@ -16,9 +16,13 @@ from tob.objects import Object
 from tob.threads import launch
 
 
+from tobot.methods import parse
+
+
 class Mods:
 
     dirs = {}
+    ignore = []
 
     @staticmethod
     def add(name, path=None):
@@ -76,6 +80,8 @@ def importer(name, pth):
 def inits(names):
     modz = []
     for name in names:
+        if name in Mods.ignore:
+            continue
         for modname, path in Mods.dirs.items():
             modpath = os.path.join(path, name + ".py")
             if not os.path.exists(modpath):
@@ -92,11 +98,13 @@ def inits(names):
 def modules():
     mods = []
     for name, path in Mods.dirs.items():
+        if name in Mods.ignore:
+            continue
         if not os.path.exists(path):
             continue
         mods.extend([
             x[:-3] for x in os.listdir(path)
-            if x.endswith(".py") and not x.startswith("__")
+            if x.endswith(".py") and not x.startswith("__") and x not in Mods.ignore
         ])
     return sorted(mods)
 
@@ -113,6 +121,8 @@ def scanner(names=[]):
     if not names:
         names = modules()
     for name in names:
+        if name in Mods.ignore:
+            continue
         for modname, path in Mods.dirs.items():
             modpath = os.path.join(path, name + ".py")
             if not os.path.exists(modpath):
@@ -122,61 +132,6 @@ def scanner(names=[]):
             mod = importer(mname, modpath)
             if mod:
                 scan(mod)
-
-
-"utility"
-
-
-def parse(obj, txt):
-    data = {
-        "args": [],
-        "cmd": "",
-        "gets": Default(),
-        "index": None,
-        "init": "",
-        "opts": "",
-        "otxt": txt,
-        "rest": "",
-        "silent": Default(),
-        "sets": Default(),
-        "txt": ""
-    }
-    for k, v in data.items():
-        setattr(obj, k, getattr(obj, k, v))
-    args = []
-    nr = -1
-    for spli in txt.split():
-        if spli.startswith("-"):
-            try:
-                obj.index = int(spli[1:])
-            except ValueError:
-                obj.opts += spli[1:]
-            continue
-        if "-=" in spli:
-            key, value = spli.split("-=", maxsplit=1)
-            setattr(obj.silent, key, value)
-            setattr(obj.gets, key, value)
-            continue
-        if "==" in spli:
-            key, value = spli.split("==", maxsplit=1)
-            setattr(obj.gets, key, value)
-            continue
-        if "=" in spli:
-            key, value = spli.split("=", maxsplit=1)
-            setattr(obj.sets, key, value)
-            continue
-        nr += 1
-        if nr == 0:
-            obj.cmd = spli
-            continue
-        args.append(spli)
-    if args:
-        obj.args = args
-        obj.txt  = obj.cmd or ""
-        obj.rest = " ".join(obj.args)
-        obj.txt  = obj.cmd + " " + obj.rest
-    else:
-        obj.txt = obj.cmd or ""
 
 
 def __dir__():

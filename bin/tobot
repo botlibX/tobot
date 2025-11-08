@@ -37,6 +37,7 @@ Workdir.wdr = os.path.expanduser(f"~/.{Config.name}")
 Mods.add("local", "mods")
 Mods.add("mods", moddir())
 Mods.add("modules", MODS.__path__[0])
+Mods.ignore = ["udp", "web", "rst"]
 
 
 class CLI(Client):
