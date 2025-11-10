@@ -18,15 +18,12 @@ import time
 sys.path.insert(0, os.getcwd())
 
 
-from tob.clients import Client, Output, Pool
-from tob.handler import Event
-from tob.threads import launch, threadhook
-
-
-from tobot.command import Mods, command, parse, scan, scanner
-from tobot.logging import level
-from tobot.persist import Workdir, moddir, skel
-from tobot.runtime import Config, check
+from tobot.clients import Client, Config, Output, Pool
+from tobot.command import Commands,  Mods, command, parse, scan, scanner
+from tobot.handler import Event
+from tobot.loggers import level
+from tobot.storage import Workdir, moddir, skel
+from tobot.threads import launch, threadhook
 from tobot.utility import elapsed
 
 
@@ -34,15 +31,11 @@ import tobot.modules as MODS
 
 
 Mods.add("modules", MODS.__path__[0])
-
-
 Workdir.wdr = ".test"
 
 
-threading.excepthook = threadhook
-
-
 events = queue.Queue()
+threading.excepthook = threadhook
 
 
 class CLI(Output):
@@ -54,7 +47,6 @@ class CLI(Output):
     def raw(self, txt):
         if "v" in Config.opts:
             print(txt)
-
 
 
 def banner(name, version):
@@ -83,7 +75,7 @@ def payload(todo):
     for cmd, example in todo.items():
         for ex in example:
             evt = Event()
-            evt.txt = f"{cmd} {ex}"
+            evt.text = f"{cmd} {ex}"
             evt.type = "command"
             Pool.put(evt)
             events.put(evt)

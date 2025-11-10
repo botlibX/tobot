@@ -8,16 +8,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tobot"
-version = "6"
+version = "7"
 authors = [
     {name = "Bart Thate", email = "bthate@dds.nl" },
 ]
 description = "bot in reverse !"
 readme = "README.rst"
 license = "Unlicense"
-dependencies = [
-    'tob',
-]
 classifiers=[
     'Development Status :: 3 - Alpha',
     'Operating System :: Unix',
