@@ -10,10 +10,10 @@ import logging
 import time
 
 
-from tob.clients import Fleet
-from tob.handler import Event
-from tob.objects import Object, construct, keys
-from tob.repeats import Repeater
+from tobot.clients import Fleet
+from tobot.handler import Event
+from tobot.objects import Object, construct, keys
+from tobot.repeats import Repeater
 
 
 from tobot.utility import elapsed
@@ -26,7 +26,7 @@ def init():
         val = getattr(oorzaken, key, None)
         if val and int(val) > 10000:
             evt = Event()
-            evt.txt = ""
+            evt.text = ""
             evt.rest = key
             sec = seconds(val)
             name = aliases.get(key)
@@ -40,7 +40,7 @@ def init():
 
 DAY = 24*60*60
 YEAR = 365*DAY
-SOURCE = "https://github.com/bthate/genocide"
+SOURCE = "https://github.com/bthate/tobot"
 STARTDATE = "2019-03-04 00:00:00"
 STARTTIME = time.mktime(time.strptime(STARTDATE, "%Y-%m-%d %H:%M:%S"))
 
@@ -65,11 +65,11 @@ aliases["Zwangerschap"] = "pregnancy"
 aliases["Suicide"] = "suicide"
 
 
-demo = Object()
-demo.gehandicapten = 2000000
-demo.ggz = 800000
-demo.population = 17440000
-demo.part = 7000000000 / demo.population
+demo = {}
+demo["gehandicapten"] = 2000000
+demo["ggz"] = 800000
+demo["population"] = 17440000
+demo["part"] = int(7000000000 / demo["population"])
 
 
 jaar = {}
@@ -143,7 +143,7 @@ def cbnow(_evt):
             continue
         nrtimes = int(delta/needed)
         txt += f"{getalias(nme)} {nrtimes} | "
-    txt += "https://pypi.org/project/genocide"
+    txt += "https://pypi.org/project/tobot"
     Fleet.announce(txt)
 
 
@@ -181,7 +181,7 @@ def dis(event):
             continue
         nrtimes = int(delta/needed)
         txt += f"{getalias(nme)} {nrtimes} | "
-    txt += "https://pypi.org/project/genocide"
+    txt += "https://pypi.org/project/tobot"
     event.reply(txt)
 
 

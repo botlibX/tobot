@@ -13,11 +13,9 @@ import time
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 
-from tob.objects import Object
-from tob.threads import launch
-
-
-from tobot.persist import store, types
+from tobot.objects import Object
+from tobot.storage import store, types
+from tobot.threads import launch
 
 
 DEBUG = False

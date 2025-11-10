@@ -11,12 +11,11 @@ import re
 import time
 
 
-from tob.clients import Fleet
-from tob.objects import Object, items
-from tob.repeats import Timed
-
-
-from tobot.persist import getpath, last, write
+from tobot.clients import Fleet
+from tobot.methods import getpath
+from tobot.objects import Object, items
+from tobot.persist import last, write
+from tobot.repeats import Timed
 from tobot.utility import elapsed, extract_date
 
 
@@ -52,11 +51,11 @@ class Timers:
 
     @staticmethod
     def add(tme, orig, channel,  txt):
-        Timers.timers[tme] = (orig, channel, txt)
+        setattr(Timers.timers, tme, (orig, channel, txt))
 
     @staticmethod
     def delete(tme):
-        del Timers.timers[tme]
+        delattr(Timers.timers, tme)
 
 
 def get_day(daystr):

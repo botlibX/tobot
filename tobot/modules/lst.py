@@ -4,7 +4,7 @@
 "available types"
 
 
-from tobot.persist import types
+from tobot.storage import types
 
 
 def lst(event):

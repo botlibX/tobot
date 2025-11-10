@@ -14,10 +14,10 @@ N A M E
 S Y N O P S I S
 
 
-    tob <cmd> [key=val] [key==val]
-    tob -cvaw [init=mod1,mod2]
-    tob -d
-    tob -s
+    tobot <cmd> [key=val] [key==val]
+    tobot -cvaw [init=mod1,mod2]
+    tobot -d
+    tobot -s
 
 
 D E S C R I P T I O N
@@ -44,57 +44,57 @@ I N S T A L L
 
     installation is done with pipx
 
-    $ pipx install tob
+    $ pipx install tobot
     $ pipx ensurepath
 
     <new terminal>
 
-    $ tob srv > tob.service
-    $ sudo mv tob.service /etc/systemd/system/
-    $ sudo systemctl enable tob --now
+    $ tobot srv > genocide.service
+    $ sudo mv tobot.service /etc/systemd/system/
+    $ sudo systemctl enable tobot --now
 
-    joins #tob on localhost
+    joins #tobot on localhost
 
 
 U S A G E 
 
 
-    use tob to control the program, default it does nothing
+    use tobot to control the program, default it does nothing
 
-    $ tob
+    $ tobot
     $
 
     see list of commands
 
 
-    $ tob cmd
+    $ tobot cmd
     cfg,cmd,dne,dpl,err,exp,imp,log,mod,mre,nme,
     pwd,rem,req,res,rss,srv,syn,tdo,thr,upt
 
 
     start console
 
-    $ tob -c
+    $ tobot -c
 
 
     start console and run irc and rss 
 
-    $ tob -c init=irc,rss
+    $ tobot -c init=irc,rss
 
     list available modules
 
-    $ tob mod
+    $ tobot mod
     err,flt,fnd,irc,llm,log,mbx,mdl,mod,req,rss,
     rst,slg,tdo,thr,tmr,udp,upt``
 
     start daemon
 
-    $ tob -d
+    $ tobot -d
     $
 
     start service
 
-    $ tob -s
+    $ tobot -s
 
     <runs until ctrl-c>
 
@@ -126,33 +126,33 @@ C O N F I G U R A T I O N
 
     irc
 
-    $ tob cfg server=<server>
-    $ tob cfg channel=<channel>
-    $ tob cfg nick=<nick>
+    $ tobot cfg server=<server>
+    $ tobot cfg channel=<channel>
+    $ tobot cfg nick=<nick>
 
     sasl
 
-    $ tob pwd <nsnick> <nspass>
-    $ tob cfg password=<frompwd>
+    $ tobot pwd <nsnick> <nspass>
+    $ tobot cfg password=<frompwd>
 
     rss
 
-    $ tob rss <url>
-    $ tob dpl <url> <item1,item2>
-    $ tob rem <url>
-    $ tob nme <url> <name>
+    $ tobot rss <url>
+    $ tobot dpl <url> <item1,item2>
+    $ tobot rem <url>
+    $ tobot nme <url> <name>
 
     opml
 
-    $ tob exp
-    $ tob imp <filename>
+    $ tobot exp
+    $ tobot imp <filename>
 
 
 P R O G R A M M I N G
 
 
-    tob has it's modules in the ~/.tob/mods directory so for a hello world
-    command you would  edit a file in ~/.tob/mods/hello.py and add the
+    tobot has it's modules in the ~/.genocide/mods directory so for a hello world
+    command you would  edit a file in ~/.tobot/mods/hello.py and add the
     following
 
 
@@ -163,7 +163,7 @@ P R O G R A M M I N G
     typing the hello command would result into a nice hello world !!
 
 
-    $ tob hello
+    $ tobot hello
     hello world !!
 
 
@@ -175,9 +175,9 @@ P R O G R A M M I N G
 F I L E S
 
 
-    ~/.tob
-    ~/.local/bin/tob
-    ~/.local/pipx/venvs/tob/*
+    ~/.tobot
+    ~/.local/bin/tobot
+    ~/.local/pipx/venvs/tobot/*
 
 
 A U T H O R

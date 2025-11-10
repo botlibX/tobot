@@ -8,11 +8,12 @@ import time
 
 
 from tobot.methods import fmt
-from tobot.persist import find, fntime, types
+from tobot.persist import find, fntime
+from tobot.storage import types
 from tobot.utility import elapsed
 
 
-def fnd(event):
+def fn(event):
     if not event.rest:
         res = sorted([x.split('.')[-1].lower() for x in types()])
         if res:

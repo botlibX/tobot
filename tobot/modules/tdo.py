@@ -7,7 +7,7 @@
 import time
 
 
-from tob.objects import Object
+from tobot.objects import Object
 
 
 from tobot.persist import find, fntime, write

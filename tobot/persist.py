@@ -4,24 +4,19 @@
 "persistence"
 
 
-import datetime
 import json
 import os
-import pathlib
 import threading
 import time
 
 
-from tob.marshal import dump, load
-from tob.objects import Object, items, update
+from .marshal import dump, load
+from .methods import deleted, fqn, getpath
+from .objects import Object, items, update
+from .storage import cdir, store
 
 
 lock = threading.RLock()
-
-
-class Workdir:
-
-    wdr = ""
 
 
 class Cache:
@@ -40,42 +35,6 @@ class Cache:
     def update(path, obj):
         setattr(Cache.objs, path, obj)
 
-
-def cdir(path):
-    pth = pathlib.Path(path)
-    pth.parent.mkdir(parents=True, exist_ok=True)
-
-
-def getpath(obj):
-    return store(ident(obj))
-
-
-def moddir(modname=None):
-    return os.path.join(Workdir.wdr, modname or "mods")
-
-
-def pidname(name):
-    assert Workdir.wdr
-    return os.path.join(Workdir.wdr, f"{name}.pid")
-
-
-def skel():
-    pth = pathlib.Path(store())
-    pth.mkdir(parents=True, exist_ok=True)
-    pth = pathlib.Path(moddir())
-    pth.mkdir(parents=True, exist_ok=True)
-    return str(pth)
-
-
-def store(fnm=""):
-    return os.path.join(Workdir.wdr, "store", fnm)
-
-
-def types():
-    return os.listdir(store())
-
-
-"find"
 
 
 def find(type=None, selector=None, removed=False, matching=False):
@@ -137,24 +96,6 @@ def last(obj, selector=None):
     return res
 
 
-"disk"
-
-
-def deleted(obj):
-    return "__deleted__" in dir(obj) and obj.__deleted__
-
-
-def fqn(obj):
-    kin = str(type(obj)).split()[-1][1:-2]
-    if kin == "type":
-        kin = f"{obj.__module__}.{obj.__name__}"
-    return kin
-
-
-def ident(obj):
-    return os.path.join(fqn(obj), *str(datetime.datetime.now()).split())
-
-
 def read(obj, path):
     with lock:
         with open(path, "r", encoding="utf-8") as fpt:
@@ -195,13 +136,8 @@ def write(obj, path=None):
 def __dir__():
     return (
         'Cache',
-        'Workdir',
-        'cdir',
         'find',
         'fntime',
-        'fqn',
         'read',
-        'skel',
-        'types',
         'write'
     )

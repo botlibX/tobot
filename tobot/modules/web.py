@@ -13,8 +13,8 @@ import time
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 
-from tob.objects import Object
-from tob.threads import launch
+from tobot.objects import Object
+from tobot.threads import launch
 
 
 d = os.path.dirname

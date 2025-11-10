@@ -5,14 +5,13 @@
 
 
 import logging
-import os
 import queue
 import threading
 import time
 import _thread
 
 
-from typing import Any
+from .methods import name
 
 
 class Thread(threading.Thread):
@@ -32,40 +31,22 @@ class Thread(threading.Thread):
     def __next__(self):
         yield from dir(self)
 
-    def join(self, timeout=None) -> Any:
+    def join(self, timeout=None):
         super().join(timeout)
         return  self.result
 
-    def run(self) -> None:
+    def run(self):
         func, args = self.queue.get()
         self.result = func(*args)
 
 
-def launch(func, *args, **kwargs) -> Thread:
+def launch(func, *args, **kwargs):
     thread = Thread(func, *args, **kwargs)
     thread.start()
     return thread
 
 
-def name(obj, short=False) -> str:
-    typ = type(obj)
-    res = ""
-    if "__builtins__" in dir(typ):
-        res = obj.__name__
-    elif "__self__" in dir(obj):
-        res = f"{obj.__self__.__class__.__name__}.{obj.__name__}"
-    elif "__class__" in dir(obj) and "__name__" in dir(obj):
-        res = f"{obj.__class__.__name__}.{obj.__name__}"
-    elif "__class__" in dir(obj):
-        res =  f"{obj.__class__.__module__}.{obj.__class__.__name__}"
-    elif "__name__" in dir(obj):
-        res = f"{obj.__class__.__name__}.{obj.__name__}"
-    if short:
-        res = res.split(".")[-1]
-    return res
-
-
-def threadhook(args) -> None:
+def threadhook(args):
     type, value, trace, thread = args
     exc = value.with_traceback(trace)
     if type not in (KeyboardInterrupt, EOFError):
@@ -76,7 +57,7 @@ def threadhook(args) -> None:
 def __dir__():
     return (
         'Thread',
-        'excepthook',
         'launch',
-        'name'
+        'name',
+        'threadhook'
    )

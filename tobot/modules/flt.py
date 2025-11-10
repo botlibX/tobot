@@ -1,8 +1,8 @@
 # This file is placed in the Public Domain.
 
 
-from tob.clients import Fleet
-from tob.threads import name
+from tobot.clients import Fleet
+from tobot.threads import name
 
 
 from tobot.methods import fmt

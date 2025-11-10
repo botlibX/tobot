@@ -9,7 +9,7 @@ import os
 import time
 
 
-from tob.objects import Object, keys, update
+from tobot.objects import Object, keys, update
 
 
 from tobot.methods import fmt

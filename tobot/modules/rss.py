@@ -22,14 +22,12 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote_plus, urlencode
 
 
-from tob.clients import Fleet
-from tob.objects import Object, update
-from tob.repeats import Repeater
-from tob.threads import launch
-
-
-from tobot.methods import fmt
-from tobot.persist import find, fntime, getpath, last, write
+from tobot.clients import Fleet
+from tobot.methods import fmt, getpath
+from tobot.objects import Object, update
+from tobot.persist import find, fntime, last, write
+from tobot.repeats import Repeater
+from tobot.threads import launch
 from tobot.utility import elapsed, spl
 
 
@@ -48,7 +46,7 @@ DEBUG = False
 
 fetchlock = _thread.allocate_lock()
 importlock = _thread.allocate_lock()
-errors = {}
+errors: dict[str, float] = {}
 skipped = []
 
 

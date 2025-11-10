@@ -10,9 +10,9 @@ import logging
 from random import SystemRandom
 
 
-from tob.clients import Fleet
-from tob.handler import Event
-from tob.repeats import Repeater
+from tobot.clients import Fleet
+from tobot.handler import Event
+from tobot.repeats import Repeater
 
 
 rand = SystemRandom()

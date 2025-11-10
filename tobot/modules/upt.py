@@ -7,8 +7,7 @@
 import time
 
 
-from tobot.runtime import STARTTIME
-from tobot.utility import elapsed
+from tobot.utility import STARTTIME, elapsed
 
 
 def upt(event):

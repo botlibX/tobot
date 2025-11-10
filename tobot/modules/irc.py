@@ -14,18 +14,15 @@ import threading
 import time
 
 
-from tob.clients import Fleet, Output
-from tob.handler import Event
-from tob.objects import Object, keys
-from tob.threads import launch
-
-
+from tobot.clients import Fleet, Output
+from tobot.clients import Config as MConfig
 from tobot.command import command
-from tobot.logging import LEVELS
-from tobot.methods import edit, fmt
-from tobot.persist import getpath, last, write
-from tobot.runtime import Config
-from tobot.utility import spl
+from tobot.handler import Event as IEvent
+from tobot.loggers import LEVELS
+from tobot.methods import edit, fmt, getpath
+from tobot.objects import Object, keys
+from tobot.persist import last, write
+from tobot.threads import launch
 
 
 IGNORE = ["PING", "PONG", "PRIVMSG"] 
@@ -47,20 +44,21 @@ def init():
 
 class Config:
 
-    channel = f"#{Config.name}"
+    channel = f"#{MConfig.name}"
     commands = True
     control = "!"
-    name = Config.name
-    nick = Config.name
+    name = MConfig.name
+    nick = MConfig.name
     password = ""
     port = 6667
-    realname = Config.name
+    realname = MConfig.name
     sasl = False
     server = "localhost"
     servermodes = ""
     sleep = 60
-    username = Config.name
+    username = MConfig.name
     users = False
+    version = MConfig.version
 
     def __init__(self):
         self.channel = Config.channel
@@ -73,7 +71,7 @@ class Config:
         self.username = Config.username
 
 
-class Event(Event):
+class Event(IEvent):
 
     def __init__(self):
         super().__init__()
@@ -87,7 +85,7 @@ class Event(Event):
         self.rawstr = ""
         self.rest = ""
         self.sets = {}
-        self.txt = ""
+        self.text = ""
 
     def dosay(self, txt):
         bot = Fleet.get(self.orig)
@@ -148,9 +146,9 @@ class IRC(Output):
         self.register("QUIT", cb_quit)
         self.register("366", cb_ready)
 
-    def announce(self, txt):
+    def announce(self, text):
         for channel in self.channels:
-            self.say(channel, txt)
+            self.say(channel, text)
 
     def connect(self, server, port=6667):
         self.state.nrconnect += 1
@@ -205,9 +203,9 @@ class IRC(Output):
             else:
                 textlist = txtlist
             _nr = -1
-            for txt in textlist:
+            for text in textlist:
                 _nr += 1
-                self.dosay(event.channel, txt)
+                self.dosay(event.channel, text)
             if len(txtlist) > 3:
                 length = len(txtlist) - 3
                 self.say(event.channel, f"use !mre to show more (+{length})")
@@ -245,9 +243,9 @@ class IRC(Output):
                 logging.debug("%s", str(type(ex)) + " " + str(ex))
             time.sleep(self.cfg.sleep)
 
-    def dosay(self, channel, txt):
+    def dosay(self, channel, text):
         self.events.joined.wait()
-        txt = str(txt).replace("\n", "")
+        txt = str(text).replace("\n", "")
         txt = txt.replace("  ", " ")
         self.docommand("PRIVMSG", channel, txt)
 
@@ -256,7 +254,7 @@ class IRC(Output):
         cmd = evt.command
         if cmd == "PING":
             self.state.pongcheck = True
-            self.docommand("PONG", evt.txt or "")
+            self.docommand("PONG", evt.text or "")
         elif cmd == "PONG":
             self.state.pongcheck = False
         if cmd == "001":
@@ -354,7 +352,7 @@ class IRC(Output):
                         txtlist.append(arg)
                     else:
                         obj.arguments.append(arg)
-                obj.txt = " ".join(txtlist)
+                obj.text = " ".join(txtlist)
         else:
             obj.command = obj.origin
             obj.origin = self.cfg.server
@@ -369,17 +367,17 @@ class IRC(Output):
             obj.channel = target
         else:
             obj.channel = obj.nick
-        if not obj.txt:
-            obj.txt = rawstr.split(":", 2)[-1]
-        if not obj.txt and len(arguments) == 1:
-            obj.txt = arguments[1]
-        splitted = obj.txt.split()
+        if not obj.text:
+            obj.text = rawstr.split(":", 2)[-1]
+        if not obj.text and len(arguments) == 1:
+            obj.text = arguments[1]
+        splitted = obj.text.split()
         if len(splitted) > 1:
             obj.args = splitted[1:]
         if obj.args:
             obj.rest = " ".join(obj.args)
         obj.orig = object.__repr__(self)
-        obj.txt = obj.txt.strip()
+        obj.text = obj.text.strip()
         obj.type = obj.command
         return obj
 
@@ -411,15 +409,15 @@ class IRC(Output):
             txt = ""
         return self.event(txt)
 
-    def raw(self, txt):
-        txt = txt.rstrip()
-        rlog("debug", txt, IGNORE)
-        txt = txt[:500]
-        txt += "\r\n"
-        txt = bytes(txt, "utf-8")
+    def raw(self, text):
+        text = text.rstrip()
+        rlog("debug", text, IGNORE)
+        text = text[:500]
+        text += "\r\n"
+        text = bytes(text, "utf-8")
         if self.sock:
             try:
-                self.sock.send(txt)
+                self.sock.send(text)
             except (
                 OSError,
                 ssl.SSLError,
@@ -458,21 +456,21 @@ class IRC(Output):
             return len(self.cache.get(chan, []))
         return 0
 
-    def say(self, channel, txt):
-        evt = Event()
-        evt.channel = channel
-        evt.reply(txt)
-        self.oput(evt)
+    def say(self, channel, text):
+        event = Event()
+        event.channel = channel
+        event.reply(text)
+        self.oput(event)
 
     def some(self):
         self.events.connected.wait()
         if not self.sock:
             return
         inbytes = self.sock.recv(512)
-        txt = str(inbytes, "utf-8")
-        if txt == "":
+        text = str(inbytes, "utf-8")
+        if text == "":
             raise ConnectionResetError
-        self.state.lastline += txt
+        self.state.lastline += text
         splitted = self.state.lastline.split("\r\n")
         for line in splitted[:-1]:
             self.buffer.append(line)
@@ -521,7 +519,7 @@ def cb_cap(evt):
 def cb_error(evt):
     bot = Fleet.get(evt.orig)
     bot.state.nrerror += 1
-    bot.state.error = evt.txt
+    bot.state.error = evt.text
     logging.debug(fmt(evt))
 
 
@@ -557,7 +555,7 @@ def cb_001(evt):
 
 def cb_notice(evt):
     bot = Fleet.get(evt.orig)
-    if evt.txt.startswith("VERSION"):
+    if evt.text.startswith("VERSION"):
         txt = f"\001VERSION {Config.name.upper()} {Config.version} - {bot.cfg.username}\001"
         bot.docommand("NOTICE", evt.channel, txt)
 
@@ -566,18 +564,18 @@ def cb_privmsg(evt):
     bot = Fleet.get(evt.orig)
     if not bot.cfg.commands:
         return
-    if evt.txt:
-        if evt.txt[0] in [
+    if evt.text:
+        if evt.text[0] in [
             "!",
         ]:
-            evt.txt = evt.txt[1:]
-        elif evt.txt.startswith(f"{bot.cfg.nick}:"):
-            evt.txt = evt.txt[len(bot.cfg.nick) + 1 :]
+            evt.text = evt.text[1:]
+        elif evt.text.startswith(f"{bot.cfg.nick}:"):
+            evt.text = evt.text[len(bot.cfg.nick) + 1 :]
         else:
             return
-        if evt.txt:
-            evt.txt = evt.txt[0].lower() + evt.txt[1:]
-        if evt.txt:
+        if evt.text:
+            evt.text = evt.text[0].lower() + evt.text[1:]
+        if evt.text:
             launch(command, evt)
 
 
@@ -585,7 +583,7 @@ def cb_quit(evt):
     bot = Fleet.get(evt.orig)
     logging.debug("quit from %s", bot.cfg.server)
     bot.state.nrerror += 1
-    bot.state.error = evt.txt
+    bot.state.error = evt.text
     if evt.orig and evt.orig in bot.zelf:
         bot.stop()
 
@@ -601,7 +599,7 @@ def cfg(event):
             fmt(
                 config,
                 keys(config),
-                skip="control,password,realname,sleep,username".split(","),
+                skip="control,name,password,realname,sleep,username".split(","),
             )
         )
     else:

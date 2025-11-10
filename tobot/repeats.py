@@ -1,14 +1,14 @@
 # This file is placed in the Public Domain.
 
 
-"repeaters"
+"non-blocking"
 
 
 import threading
 import time
 
 
-from tob.threads import launch, name
+from .threads import launch, name
 
 
 class Timy(threading.Timer):
@@ -34,24 +34,24 @@ class Timed:
         self.target = time.time() + self.sleep
         self.timer = None
 
-    def run(self) -> None:
+    def run(self):
         self.timer.latest = time.time()
         self.func(*self.args)
 
-    def start(self) -> None:
+    def start(self):
         self.kwargs["name"] = self.name
         timer = Timy(self.sleep, self.run, *self.args, **self.kwargs)
         timer.start()
         self.timer = timer
 
-    def stop(self) -> None:
+    def stop(self):
         if self.timer:
             self.timer.cancel()
 
 
 class Repeater(Timed):
 
-    def run(self) -> None:
+    def run(self):
         launch(self.start)
         super().run()
 

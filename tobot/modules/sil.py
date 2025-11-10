@@ -4,7 +4,7 @@
 "enable silence mode"
 
 
-from tob.clients import Fleet
+from tobot.clients import Fleet
 
 
 def sil(event):

@@ -4,17 +4,19 @@
 "methods"
 
 
-from tob.objects import Object, items
+import datetime
+import os
 
 
-class Default(Object):
-
-    def __getattr__(self, key):
-        return self.__dict__.get(key, "")
+from .objects import Default, items
+from .storage import store
 
 
+def deleted(obj):
+    return "__deleted__" in dir(obj) and obj.__deleted__
 
-def edit(obj, setter, skip=True):
+
+def edit(obj, setter, skip=True) -> None:
     for key, val in items(setter):
         if skip and val == "":
             continue
@@ -36,7 +38,7 @@ def edit(obj, setter, skip=True):
             setattr(obj, key, val)
 
 
-def fmt(obj, args=[], skip=[], plain=False, empty=False):
+def fmt(obj, args=[], skip=[], plain=False, empty=False) -> str:
     if not args:
         args = obj.__dict__.keys()
     txt = ""
@@ -61,7 +63,40 @@ def fmt(obj, args=[], skip=[], plain=False, empty=False):
     return txt.strip()
 
 
-def parse(obj, txt):
+def fqn(obj):
+    kin = str(type(obj)).split()[-1][1:-2]
+    if kin == "type":
+        kin = f"{obj.__module__}.{obj.__name__}"
+    return kin
+
+
+def getpath(obj):
+    return store(ident(obj))
+
+
+def ident(obj):
+    return os.path.join(fqn(obj), *str(datetime.datetime.now()).split())
+
+
+def name(obj, short=False):
+    typ = type(obj)
+    res = ""
+    if "__builtins__" in dir(typ):
+        res = obj.__name__
+    elif "__self__" in dir(obj):
+        res = f"{obj.__self__.__class__.__name__}.{obj.__name__}"
+    elif "__class__" in dir(obj) and "__name__" in dir(obj):
+        res = f"{obj.__class__.__name__}.{obj.__name__}"
+    elif "__class__" in dir(obj):
+        res =  f"{obj.__class__.__module__}.{obj.__class__.__name__}"
+    elif "__name__" in dir(obj):
+        res = f"{obj.__class__.__name__}.{obj.__name__}"
+    if short:
+        res = res.split(".")[-1]
+    return res
+
+
+def parse(obj, text) -> None:
     data = {
         "args": [],
         "cmd": "",
@@ -69,17 +104,17 @@ def parse(obj, txt):
         "index": None,
         "init": "",
         "opts": "",
-        "otxt": txt,
+        "otxt": text,
         "rest": "",
         "silent": Default(),
         "sets": Default(),
-        "txt": ""
+        "text": text
     }
     for k, v in data.items():
-        setattr(obj, k, getattr(obj, k, v))
+        setattr(obj, k, getattr(obj, k, v) or v)
     args = []
     nr = -1
-    for spli in txt.split():
+    for spli in text.split():
         if spli.startswith("-"):
             try:
                 obj.index = int(spli[1:])
@@ -106,17 +141,20 @@ def parse(obj, txt):
         args.append(spli)
     if args:
         obj.args = args
-        obj.txt  = obj.cmd or ""
+        obj.text  = obj.cmd or ""
         obj.rest = " ".join(obj.args)
-        obj.txt  = obj.cmd + " " + obj.rest
+        obj.text  = obj.cmd + " " + obj.rest
     else:
-        obj.txt = obj.cmd or ""
+        obj.text = obj.cmd or ""
 
 
 def __dir__():
     return (
+        'deleted',
         'edit',
         'fmt',
+        'fqn',
+        'ident',
         'name',
         'parse'
    )

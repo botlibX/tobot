@@ -11,18 +11,18 @@ import os
 import sys
 
 
-from tob.clients import Fleet
-from tob.objects import Object
-from tob.threads import launch
+from typing import Callable
 
 
-from tobot.methods import parse
+from .clients import Fleet
+from .methods import parse
+from .threads import launch
 
 
 class Mods:
 
-    dirs = {}
-    ignore = []
+    dirs: dict[str, str] = {}
+    ignore: list[str] = []
 
     @staticmethod
     def add(name, path=None):
@@ -33,8 +33,8 @@ class Mods:
 
 class Commands:
 
-    cmds = {}
-    names = {}
+    cmds: dict[str, Callable] = {}
+    names: dict[str, str] = {}
 
     @staticmethod
     def add(*args):
@@ -48,14 +48,8 @@ class Commands:
         return Commands.cmds.get(cmd, None)
 
 
-class Default(Object):
-
-    def __getattr__(self, key):
-        return self.__dict__.get(key, "")
-
-
 def command(evt):
-    parse(evt, evt.txt)
+    parse(evt, evt.text)
     func = Commands.get(evt.cmd)
     if func:
         func(evt)
@@ -86,12 +80,12 @@ def inits(names):
             modpath = os.path.join(path, name + ".py")
             if not os.path.exists(modpath):
                 continue
-        pkgname = path.split(os.sep)[-1]
-        mname = ".".join((pkgname, name))
-        mod = importer(mname, modpath)
-        if mod and "init" in dir(mod):
-            thr = launch(mod.init)
-            modz.append((mod, thr))
+            pkgname = path.split(os.sep)[-1]
+            mname = ".".join((pkgname, name))
+            mod = importer(mname, modpath)
+            if mod and "init" in dir(mod):
+                thr = launch(mod.init)
+                modz.append((mod, thr))
     return modz
 
 
@@ -120,6 +114,7 @@ def scan(module):
 def scanner(names=[]):
     if not names:
         names = modules()
+    mods = []
     for name in names:
         if name in Mods.ignore:
             continue
@@ -131,12 +126,15 @@ def scanner(names=[]):
             mname = ".".join((pkgname, name))
             mod = importer(mname, modpath)
             if mod:
+                mods.append(mod)
                 scan(mod)
+    return mods
 
 
 def __dir__():
     return (
         'Comamnds',
+        'Mods',
         'command',
         'importer',
         'modules',
