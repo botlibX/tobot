@@ -3,8 +3,12 @@
 
 import importlib
 import importlib.util
+import inspect
 import os
 import sys
+
+
+from .utility import where
 
 
 class Mods:
@@ -17,10 +21,9 @@ class Mods:
         Mods.dirs[name] = path
 
     @staticmethod
-    def init():
-        name = os.path.split(__file__)[-2]
-        print(name)
-        Mods.add(f"{name}.modules", os.path.join(inspect.getfile(Mods), "modules"))
+    def init(*pkgs):
+        for pkg in pkgs:
+            Mods.add(pkg.__name__, pkg.__path__[0])
         
 
 def getmod(name):
@@ -52,7 +55,6 @@ def importer(name, pth):
 
 
 def modules():
-    print(Mods.dirs)
     mods = []
     for name, path in Mods.dirs.items():
         if name in Mods.ignore:

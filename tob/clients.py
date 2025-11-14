@@ -11,10 +11,10 @@ from .threads import launch
 
 class Config:
 
-    name = "tobot"
+    name = "tob"
     opts = ""
     sets: dict[str,str] = {}
-    version = 8
+    version = 141
 
 
 class Client(Handler):
