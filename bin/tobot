@@ -9,36 +9,26 @@ import threading
 import time
 
 
-sys.path.insert(0, os.getcwd())
+#sys.path.insert(0, os.getcwd())
 
 
 from tobot.clients import Client, Config
-from tobot.command import Commands, Mods, command, inits, modules, scanner
+from tobot.command import Commands, command, parse, scan
 from tobot.handler import Event
 from tobot.loggers import level
-from tobot.methods import parse
-from tobot.storage import Workdir, moddir, pidname
-from tobot.threads import threadhook
-from tobot.utility import daemon, forever, pidfile, privileges
-
-
-import tobot.modules as MODS
-
-
-threading.excepthook = threadhook
+from tobot.objects import update
+from tobot.package import Mods, getmod, modules
+from tobot.persist import Workdir, moddir, pidname
+from tobot.threads import launch, threadhook
+from tobot.utility import daemon, forever, pidfile, privileges, wrap
+from tobot.utility import check, spl, where, wrapped
 
 
 Config.name = "tobot"
-Config.version = 7
+Config.version = 8
 
 
-Mods.add("local", "mods")
-Mods.add("mods", moddir())
-Mods.add("modules", MODS.__path__[0])
-Mods.ignore = ["udp", "web", "rst"]
-
-
-Workdir.wdr = os.path.expanduser(f"~/.{Config.name}")
+Mods.ignore = ["mbx", "udp", "web", "rst"]
 
 
 class CLI(Client):
@@ -66,6 +56,9 @@ class Console(CLI):
         return evt
 
 
+"in the begining"
+
+
 def banner(name, version):
     tme = time.ctime(time.time()).replace("  ", " ")
     logger = logging.getLogger()
@@ -78,30 +71,53 @@ def banner(name, version):
     sys.stdout.flush()
 
 
+def boot():
+    Mods.add(f"{Config.name}.modules", os.path.join(where(Config), "modules"))
+    Mods.add("mods", "mods")
+    Workdir.wdr = os.path.expanduser(f"~/.{Config.name}")
+
+
+def scanner(names, init=False):
+    mods = []
+    for name in names:
+        mod = getmod(name)
+        if mod:
+            scan(mod)
+        if init and "init" in dir(mod):
+            thr = launch(mod.init, Config())
+            mods.append((mod, thr))
+    return mods
+
+
+"scripts"
+
+
 def background():
     daemon(check("v"))
     privileges()
-    level("debug")
-    scanner()
+    level("info")
+    boot()
+    scanner(modules(), True)
     Commands.add(cmd, ver)
     pidfile(pidname(Config.name))
-    inits(modules())
     forever()
 
 
 def console():
     import readline # noqa: F401
     parse(Config, " ".join(sys.argv[1:]))
-    level(Config.sets.level or "warn")    
+    level(Config.sets.get("level", "info"))
+    boot()
     if "v" in Config.opts:
         banner(Config.name, Config.version)
     mods = []
     if "a" in Config.opts:
         mods = modules()
-    scanner(mods)
+    else:
+        mods = spl(Config.sets.get("init", ""))
     Commands.add(cmd, ver)
     csl = Console()
-    for _mod, thr in inits(Config.sets.init or mods):
+    for _mod, thr in scanner(mods, True):
         thr.join(30.0)
     csl.start()
     forever()
@@ -110,7 +126,8 @@ def console():
 def control():
     if len(sys.argv) == 1:
         return
-    scanner()
+    boot()
+    scanner(modules(), False)
     Commands.add(cmd, srv, ver)
     csl = CLI()
     csl.silent = False
@@ -124,13 +141,16 @@ def control():
 
 def service():
     privileges()
-    level("warn")
+    level("info")
     banner(Config.name, Config.version)
-    scanner()
+    boot()
+    scanner(modules(), True)
     Commands.add(cmd, ver)
     pidfile(pidname(Config.name))
-    inits(modules())
     forever()
+
+
+"commands"
 
 
 def cmd(event):
@@ -161,36 +181,10 @@ def ver(event):
     event.reply(f"{Config.name.upper()} {Config.version}")
 
 
-def wrapped(func):
-    try:
-        func()
-    except (KeyboardInterrupt, EOFError):
-        pass
+"runtime"
 
 
-def wrap(func):
-    import termios
-    old = None
-    try:
-        old = termios.tcgetattr(sys.stdin.fileno())
-    except termios.error:
-        pass
-    try:
-        wrapped(func)
-    finally:
-        if old:
-            termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, old)
-
-
-def check(text):
-    args = sys.argv[1:]
-    for arg in args:
-        if not arg.startswith("-"):
-            continue
-        for char in text:
-            if char in arg:
-                return True
-    return False
+threading.excepthook = threadhook
 
 
 def main():
