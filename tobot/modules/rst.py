@@ -10,9 +10,9 @@ import time
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 
-from ..objects import Object
-from ..persist import store, types
-from ..threads import launch
+from tob.objects import Object
+from tob.persist import store, types
+from tob.threads import launch
 
 
 DEBUG = False
@@ -107,7 +107,7 @@ class RESTHandler(BaseHTTPRequestHandler):
         try:
             with open(fnm, "r", encoding="utf-8") as file:
                 txt = file.read()
-                file.c.e()
+                file.ctobe()
             self.write_header("text/html")
             self.send(html(txt))
         except (TypeError, FileNotFoundError, IsADirectoryError) as ex:

@@ -1,9 +1,9 @@
 # This file is placed in the Public Domain.
 
 
-from ..clients import Fleet
-from ..methods import fmt
-from ..threads import name
+from tob.clients import Fleet
+from tob.methods import fmt
+from tob.threads import name
 
 
 def flt(event):

@@ -12,11 +12,16 @@ class Mods:
     dirs: dict[str, str] = {}
     ignore: list[str] = []
 
-    def add(name, path=None):
-        if path is None:
-            path = name
+    @staticmethod
+    def add(name, path):
         Mods.dirs[name] = path
 
+    @staticmethod
+    def init():
+        name = os.path.split(__file__)[-2]
+        print(name)
+        Mods.add(f"{name}.modules", os.path.join(inspect.getfile(Mods), "modules"))
+        
 
 def getmod(name):
     mname = ""
@@ -47,6 +52,7 @@ def importer(name, pth):
 
 
 def modules():
+    print(Mods.dirs)
     mods = []
     for name, path in Mods.dirs.items():
         if name in Mods.ignore:

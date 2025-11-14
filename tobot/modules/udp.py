@@ -9,9 +9,9 @@ import threading
 import time
 
 
-from ..clients import Fleet
-from ..objects import Object
-from ..threads import launch
+from tob.clients import Fleet
+from tob.objects import Object
+from tob.threads import launch
 
 
 DEBUG = False

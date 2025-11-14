@@ -2,9 +2,6 @@
 # This file is placed in the Public Domain.
 
 
-"objects"
-
-
 import inspect
 import logging
 import os
@@ -18,24 +15,22 @@ import time
 sys.path.insert(0, os.getcwd())
 
 
-from tobot.clients import Client, Config, Output, Pool
-from tobot.command import Commands,  Mods, command, parse, scan, scanner
+from tobot.clients import Client, Config, Output
+from tobot.command import Commands, command, parse, scan
 from tobot.handler import Event
 from tobot.loggers import level
-from tobot.storage import Workdir, moddir, skel
+from tobot.package import Mods, getmod, modules
+from tobot.persist import Workdir, moddir, skel
 from tobot.threads import launch, threadhook
-from tobot.utility import elapsed
+from tobot.utility import elapsed, where
 
 
-import tobot.modules as MODS
-
-
-Mods.add("modules", MODS.__path__[0])
+#Mods.add(f"{Config.name}.modules", os.path.join(where(), "modules"))
+#Mods.add("mods")
 Workdir.wdr = ".test"
 
 
 events = queue.Queue()
-threading.excepthook = threadhook
 
 
 class CLI(Output):
@@ -49,6 +44,35 @@ class CLI(Output):
             print(txt)
 
 
+class Pool:
+
+    clients: list[Client] = []
+    lock = threading.RLock()
+    nrcpu = 1
+    nrlast = 0
+
+    @staticmethod
+    def add(client):
+        Pool.clients.append(client)
+
+    @staticmethod
+    def init(cls, nr, verbose=False):
+        Pool.nrcpu = nr
+        for _x in range(Pool.nrcpu):
+            clt = cls()
+            clt.start()
+            Pool.add(clt)
+
+    @staticmethod
+    def put(event):
+        with Pool.lock:
+            if Pool.nrlast >= Pool.nrcpu-1:
+                Pool.nrlast = 0
+            clt = Pool.clients[Pool.nrlast]
+            clt.put(event)
+            Pool.nrlast += 1
+
+
 def banner(name, version):
     tme = time.ctime(time.time()).replace("  ", " ")
     logger = logging.getLogger()
@@ -59,6 +83,14 @@ def banner(name, version):
                                    logging.getLevelName(logger.getEffectiveLevel())
                                   ))
     sys.stdout.flush()
+
+
+def boot():
+    skel()
+    Mods.add(f"{Config.name}.modules", os.path.join(where(Config), "modules"))
+    Mods.add("mods", moddir())
+    Workdir.wdr = os.path.expanduser(f"~/.{Config.name}")
+    print(Mods.dirs)
 
 
 def consume():
@@ -81,12 +113,29 @@ def payload(todo):
             events.put(evt)
 
 
+def scanner(names=[]):
+    if not names:
+        names = modules()
+    mods = []
+    for name in names:
+        if name in Mods.ignore:
+            continue
+        mod = getmod(name)
+        if mod:
+            mods.append(mod)
+            scan(mod)
+    return mods
+
+
 def main():
     if os.path.exists(Workdir.wdr):
         shutil.rmtree(Workdir.wdr)
     parse(Config, " ".join(sys.argv[1:]))
+    if "b" in Config.opts:
+        threading.excepthook = threadhook
     if "v" in Config.opts:
         banner(Config.name, Config.version)
+    boot()
     scanner()
     args = sys.argv[1:]
     if "z" in Config.opts:
@@ -146,7 +195,7 @@ examples = {
 
 pre = {
     "cfg": ["", "nick=mekker"],
-    "imp": ["", "tests/feeds.opml"],
+    "imp": ["", "testing/feeds.opml"],
     "log": ["", "bla"],
     "rss": ["","http://hnrss.org/newest"],
     "tdo": ["", "mekker"]
@@ -158,7 +207,6 @@ post = {
     "exp": [""],
     "rem": ["", "hnrss"]
 }
-
 
 
 if __name__ == "__main__":

@@ -46,7 +46,7 @@ I N S T A L L
 
     <new terminal>
 
-    $ . srv > ..service
+    $ . srv > tob.service
     $ sudo mv ..service /etc/systemd/system/
     $ sudo systemctl enable . --now
 
@@ -148,7 +148,7 @@ C O N F I G U R A T I O N
 P R O G R A M M I N G
 
 
-    . has it's modules in the ~/../mods directory so for a hello world
+    . has it's modules in the ~/.tob/mods directory so for a hello world
     command you would  edit a file in ~/../mods/hello.py and add the
     following
 

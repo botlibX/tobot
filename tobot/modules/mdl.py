@@ -6,11 +6,11 @@ import logging
 import time
 
 
-from ..command import Fleet
-from ..handler import Event
-from ..objects import Object, construct, keys
-from ..repeats import Repeater
-from ..utility import elapsed
+from tob.command import Fleet
+from tob.handler import Event
+from tob.objects import Object, construct, keys
+from tob.repeats import Repeater
+from tob.utility import elapsed
 
 
 def init(cfg):
@@ -205,7 +205,7 @@ def now(event):
 
 oor = """"Totaal onderliggende doodsoorzaken (aantal)";
          "1 Infectieuze en parasitaire ziekten/Totaal infectieuze en parasitaire zktn (aantal)";
-         "1 Infectieuze en parasitaire ziekten/1.1 Tubercu.e (aantal)";
+         "1 Infectieuze en parasitaire ziekten/1.1 Tubercutobe (aantal)";
          "1 Infectieuze en parasitaire ziekten/1.2 Meningokokkeninfecties (aantal)";
          "1 Infectieuze en parasitaire ziekten/1.3 Virale hepatitis (aantal)";
          "1 Infectieuze en parasitaire ziekten/1.4 AIDS (aantal)";

@@ -4,9 +4,9 @@
 import time
 
 
-from ..objects import Object
-from ..persist import find, fntime, write
-from ..utility import elapsed
+from tob.objects import Object
+from tob.persist import find, fntime, write
+from tob.utility import elapsed
 
 
 class Todo(Object):

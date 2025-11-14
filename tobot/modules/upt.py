@@ -4,7 +4,7 @@
 import time
 
 
-from ..utility import elapsed
+from tob.utility import elapsed
 
 
 STARTTIME = time.time()

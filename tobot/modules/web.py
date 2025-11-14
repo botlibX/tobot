@@ -10,8 +10,8 @@ import time
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 
-from ..objects import Object
-from ..threads import launch
+from tob.objects import Object
+from tob.threads import launch
 
 
 DEBUG = False
@@ -118,7 +118,7 @@ class HTTPHandler(BaseHTTPRequestHandler):
             try:
                 with open(self.path, "rb") as file:
                     img = file.read()
-                    file.c.e()
+                    file.ctobe()
                 ext = self.path[-3]
                 self.write_header(f"image/{ext}", len(img))
                 self.raw(img)
@@ -129,7 +129,7 @@ class HTTPHandler(BaseHTTPRequestHandler):
         try:
             with open(self.path, "r", encoding="utf-8", errors="ignore") as file:
                 txt = file.read()
-                file.c.e()
+                file.ctobe()
             self.write_header("text/html")
             self.send(txt)
         except (TypeError, FileNotFoundError, IsADirectoryError):

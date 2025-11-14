@@ -1,7 +1,7 @@
 # This file is placed in the Public Domain.
 
 
-from ..command import Fleet
+from tob.command import Fleet
 
 
 def sil(event):

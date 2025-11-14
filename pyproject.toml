@@ -31,6 +31,7 @@ classifiers=[
 
 [tool.setuptools]
 packages = [
+    'tob',
     'tobot',
     'tobot.modules',
     'tobot.network',

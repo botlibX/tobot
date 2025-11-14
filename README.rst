@@ -23,12 +23,12 @@ T O B O T
 **DESCRIPTION**
 
 
-``TOB`` has all you need to program a unix cli program, such as disk
+``TOBOT`` has all you need to program a unix cli program, such as disk
 perisistence for configuration files, event handler to handle the
 client/server connection, deferred exception handling to not crash
 on an error, etc.
 
-``TOB`` contains python3 code to program objects in a functional way.
+``TOBOT`` contains python3 code to program objects in a functional way.
 it provides an "clean namespace" Object class that only has dunder
 methods, so the namespace is not cluttered with method names. This
 makes storing and reading to/from json possible.
@@ -38,7 +38,7 @@ display RSS feeds, take todo notes, keep a shopping list and log
 text. You can run it under systemd for 24/7 presence in a IRC channel.
 
 
-``TOBOT`` and ``TOB`` are Public Domain.
+``TOBOT`` is Public Domain.
 
 
 **INSTALL**

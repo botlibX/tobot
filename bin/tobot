@@ -9,19 +9,23 @@ import threading
 import time
 
 
-#sys.path.insert(0, os.getcwd())
+sys.path.insert(0, os.getcwd())
 
 
-from tobot.clients import Client, Config
-from tobot.command import Commands, command, parse, scan
-from tobot.handler import Event
-from tobot.loggers import level
-from tobot.objects import update
-from tobot.package import Mods, getmod, modules
-from tobot.persist import Workdir, moddir, pidname
-from tobot.threads import launch, threadhook
-from tobot.utility import daemon, forever, pidfile, privileges, wrap
-from tobot.utility import check, spl, where, wrapped
+from tob.clients import Client, Config
+from tob.command import Commands, command, parse, scan
+from tob.handler import Event
+from tob.methods import fmt
+from tob.loggers import level
+from tob.objects import update
+from tob.package import Mods, getmod, modules
+from tob.persist import Workdir, moddir, pidname, skel
+from tob.threads import launch, threadhook
+from tob.utility import daemon, forever, pidfile, privileges, wrap
+from tob.utility import check, spl, where, wrapped
+
+
+import tobot.modules as MODS
 
 
 Config.name = "tobot"
@@ -29,6 +33,10 @@ Config.version = 8
 
 
 Mods.ignore = ["mbx", "udp", "web", "rst"]
+Mods.init(MODS)
+
+
+Workdir.wdr = os.path.expanduser(f"~/.{Config.name}")
 
 
 class CLI(Client):
@@ -71,18 +79,13 @@ def banner(name, version):
     sys.stdout.flush()
 
 
-def boot():
-    Mods.add(f"{Config.name}.modules", os.path.join(where(Config), "modules"))
-    Mods.add("mods", "mods")
-    Workdir.wdr = os.path.expanduser(f"~/.{Config.name}")
-
-
 def scanner(names, init=False):
     mods = []
     for name in names:
         mod = getmod(name)
-        if mod:
-            scan(mod)
+        if not mod:
+            continue
+        scan(mod)
         if init and "init" in dir(mod):
             thr = launch(mod.init, Config())
             mods.append((mod, thr))
@@ -96,7 +99,6 @@ def background():
     daemon(check("v"))
     privileges()
     level("info")
-    boot()
     scanner(modules(), True)
     Commands.add(cmd, ver)
     pidfile(pidname(Config.name))
@@ -107,18 +109,16 @@ def console():
     import readline # noqa: F401
     parse(Config, " ".join(sys.argv[1:]))
     level(Config.sets.get("level", "info"))
-    boot()
     if "v" in Config.opts:
         banner(Config.name, Config.version)
-    mods = []
     if "a" in Config.opts:
         mods = modules()
     else:
         mods = spl(Config.sets.get("init", ""))
-    Commands.add(cmd, ver)
     csl = Console()
     for _mod, thr in scanner(mods, True):
         thr.join(30.0)
+    Commands.add(cmd, ver)
     csl.start()
     forever()
 
@@ -126,7 +126,6 @@ def console():
 def control():
     if len(sys.argv) == 1:
         return
-    boot()
     scanner(modules(), False)
     Commands.add(cmd, srv, ver)
     csl = CLI()
@@ -143,7 +142,6 @@ def service():
     privileges()
     level("info")
     banner(Config.name, Config.version)
-    boot()
     scanner(modules(), True)
     Commands.add(cmd, ver)
     pidfile(pidname(Config.name))

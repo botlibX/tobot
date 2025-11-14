@@ -11,15 +11,15 @@ import threading
 import time
 
 
-from ..clients import Config, Output
-from ..command import Fleet, command
-from ..handler import Event as IEvent
-from ..loggers import LEVELS
-from ..methods import edit, fmt
-from ..objects import Object, keys
-from ..persist import getpath, last, write
-from ..threads import launch
-from ..utility import where
+from tob.clients import Config, Output
+from tob.command import Fleet, command
+from tob.handler import Event as IEvent
+from tob.loggers import LEVELS
+from tob.methods import edit, fmt
+from tob.objects import Object, keys
+from tob.persist import getpath, last, write
+from tob.threads import launch
+from tob.utility import where
 
 
 IGNORE = ["PING", "PONG", "PRIVMSG"] 

@@ -8,11 +8,11 @@ import re
 import time
 
 
-from ..command import Fleet
-from ..objects import Object, items
-from ..persist import getpath, last, write
-from ..repeats import Timed
-from ..utility import elapsed, extract_date
+from tob.command import Fleet
+from tob.objects import Object, items
+from tob.persist import getpath, last, write
+from tob.repeats import Timed
+from tob.utility import elapsed, extract_date
 
 
 def init(cfg):

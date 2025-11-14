@@ -4,9 +4,9 @@
 import time
 
 
-from ..methods import fmt
-from ..persist import find, fntime, types
-from ..utility import elapsed
+from tob.methods import fmt
+from tob.persist import find, fntime, types
+from tob.utility import elapsed
 
 
 def fnd(event):
