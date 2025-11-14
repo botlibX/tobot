@@ -34,6 +34,7 @@ Config.version = 8
 
 Mods.ignore = ["mbx", "udp", "web", "rst"]
 Mods.init(MODS)
+Mods.add("mods", moddir())
 
 
 Workdir.wdr = os.path.expanduser(f"~/.{Config.name}")
