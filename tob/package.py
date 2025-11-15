@@ -3,12 +3,11 @@
 
 import importlib
 import importlib.util
-import inspect
 import os
 import sys
 
 
-from .utility import where
+from .utility import spl, where
 
 
 class Mods:
@@ -17,14 +16,22 @@ class Mods:
     ignore: list[str] = []
 
     @staticmethod
-    def add(name, path):
+    def add(name=None, path=None):
         Mods.dirs[name] = path
 
     @staticmethod
-    def init(*pkgs):
-        for pkg in pkgs:
-            Mods.add(pkg.__name__, pkg.__path__[0])
-        
+    def init(name, ignore="", local=False):
+        if name:
+           pkg = importer(name)
+        if not pkg:
+           name = f"{name}.modules"
+           pkg = importer(name)
+        Mods.add(name, pkg.__path__[0])
+        if ignore:
+            Mods.ignore = spl(ignore)
+        if local:
+            Mods.add("mods", "mods")
+
 
 def getmod(name):
     mname = ""
@@ -40,10 +47,11 @@ def getmod(name):
     return sys.modules.get(mname, None) or importer(mname, pth)
 
 
-def importer(name, pth):
-    if not os.path.exists(pth):
-        return
-    spec = importlib.util.spec_from_file_location(name, pth)
+def importer(name, pth=None):
+    if pth and os.path.exists(pth):
+        spec = importlib.util.spec_from_file_location(name, pth)
+    else:
+        spec = importlib.util.find_spec(name)
     if not spec or not spec.loader:
         return
     mod = importlib.util.module_from_spec(spec)

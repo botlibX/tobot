@@ -15,29 +15,19 @@ sys.path.insert(0, os.getcwd())
 from tob.clients import Client, Config
 from tob.command import Commands, command, parse, scan
 from tob.handler import Event
-from tob.methods import fmt
 from tob.loggers import level
 from tob.objects import update
 from tob.package import Mods, getmod, modules
-from tob.persist import Workdir, moddir, pidname, skel
+from tob.persist import Workdir, moddir, pidname
 from tob.threads import launch, threadhook
 from tob.utility import daemon, forever, pidfile, privileges, wrap
 from tob.utility import check, spl, where, wrapped
 
 
-import tobot.modules as MODS
+NAME = "tobot"
 
-
-Config.name = "tobot"
+Config.name = NAME
 Config.version = 8
-
-
-Mods.ignore = ["mbx", "udp", "web", "rst"]
-Mods.init(MODS)
-Mods.add("mods", moddir())
-
-
-Workdir.wdr = os.path.expanduser(f"~/.{Config.name}")
 
 
 class CLI(Client):
@@ -80,13 +70,18 @@ def banner(name, version):
     sys.stdout.flush()
 
 
+def boot():
+    Config.name = NAME
+    Workdir.init(NAME)
+    Mods.init("tobot.modules", ignore="mbx,rst,udp,web", local=True)
+
+
 def scanner(names, init=False):
     mods = []
     for name in names:
         mod = getmod(name)
-        if not mod:
-            continue
-        scan(mod)
+        if mod:
+            scan(mod)
         if init and "init" in dir(mod):
             thr = launch(mod.init, Config())
             mods.append((mod, thr))
@@ -112,14 +107,15 @@ def console():
     level(Config.sets.get("level", "info"))
     if "v" in Config.opts:
         banner(Config.name, Config.version)
+    mods = []
     if "a" in Config.opts:
         mods = modules()
     else:
         mods = spl(Config.sets.get("init", ""))
+    Commands.add(cmd, ver)
     csl = Console()
     for _mod, thr in scanner(mods, True):
         thr.join(30.0)
-    Commands.add(cmd, ver)
     csl.start()
     forever()
 
@@ -187,6 +183,7 @@ threading.excepthook = threadhook
 
 
 def main():
+    boot()
     if check("c"):
         wrap(console)
     elif check("d"):

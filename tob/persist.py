@@ -138,6 +138,11 @@ class Workdir:
     wdr = ""
 
 
+    @staticmethod
+    def init(name):
+        Workdir.wdr = os.path.expanduser(f"~/.{name}")
+
+
 def cdir(path):
     pth = pathlib.Path(path)
     pth.parent.mkdir(parents=True, exist_ok=True)

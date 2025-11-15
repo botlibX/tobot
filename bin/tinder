@@ -15,18 +15,17 @@ import time
 sys.path.insert(0, os.getcwd())
 
 
-from tobot.clients import Client, Config, Output
-from tobot.command import Commands, command, parse, scan
-from tobot.handler import Event
-from tobot.loggers import level
-from tobot.package import Mods, getmod, modules
-from tobot.persist import Workdir, moddir, skel
-from tobot.threads import launch, threadhook
-from tobot.utility import elapsed, where
+from tob.clients import Client, Config, Output
+from tob.command import Commands, command, parse, scan
+from tob.handler import Event
+from tob.loggers import level
+from tob.package import Mods, getmod, modules
+from tob.persist import Workdir, moddir, skel
+from tob.threads import launch, threadhook
+from tob.utility import elapsed, where
 
 
-#Mods.add(f"{Config.name}.modules", os.path.join(where(), "modules"))
-#Mods.add("mods")
+Mods.init("tobot.modules")
 Workdir.wdr = ".test"
 
 
@@ -85,14 +84,6 @@ def banner(name, version):
     sys.stdout.flush()
 
 
-def boot():
-    skel()
-    Mods.add(f"{Config.name}.modules", os.path.join(where(Config), "modules"))
-    Mods.add("mods", moddir())
-    Workdir.wdr = os.path.expanduser(f"~/.{Config.name}")
-    print(Mods.dirs)
-
-
 def consume():
     while True:
         try:
@@ -135,7 +126,6 @@ def main():
         threading.excepthook = threadhook
     if "v" in Config.opts:
         banner(Config.name, Config.version)
-    boot()
     scanner()
     args = sys.argv[1:]
     if "z" in Config.opts:

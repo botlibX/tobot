@@ -120,6 +120,7 @@ class Fleet:
 def __dir__():
     return (
         'Client',
+        'Config',
         'Fleet',
         'Output'
    )
