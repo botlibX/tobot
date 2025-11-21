@@ -6,8 +6,8 @@ import logging
 import time
 
 
-from tob.command import Fleet
-from tob.handler import Event
+from tob.brokers import Broker
+from tob.message import Message
 from tob.objects import Object, construct, keys
 from tob.repeats import Repeater
 from tob.utility import elapsed
@@ -19,7 +19,7 @@ def init(cfg):
             continue
         val = getattr(oorzaken, key, None)
         if val and int(val) > 10000:
-            evt = Event()
+            evt = Message()
             evt.text = ""
             evt.rest = key
             sec = seconds(val)
@@ -114,14 +114,14 @@ def iswanted(k, line):
 def daily():
     while 1:
         time.sleep(24*60*60)
-        evt = Event()
+        evt = Message()
         cbnow(evt)
 
 
 def hourly():
     while 1:
         time.sleep(60*60)
-        evt = Event()
+        evt = Message()
         cbnow(evt)
 
 
@@ -138,7 +138,8 @@ def cbnow(_evt):
         nrtimes = int(delta/needed)
         txt += f"{getalias(nme)} {nrtimes} | "
     txt += "https://pypi.org/project/."
-    Fleet.announce(txt)
+    for bot in Broker.all("announce"):
+        bot.announce(txt)
 
 
 def cbstats(evt):
@@ -160,7 +161,8 @@ def cbstats(evt):
             nryear,
             elapsed(needed)
         )
-        Fleet.announce(txt)
+        for bot in Broker.all("announce"):
+            bot.announce(txt)
 
 
 "commands"

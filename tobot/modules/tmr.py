@@ -8,11 +8,16 @@ import re
 import time
 
 
-from tob.command import Fleet
+from tob.brokers import Broker
+from tob.locater import last
 from tob.objects import Object, items
-from tob.persist import getpath, last, write
+from tob.persist import write
 from tob.repeats import Timed
 from tob.utility import elapsed, extract_date
+from tob.workdir import getpath
+
+
+rand = random.SystemRandom()
 
 
 def init(cfg):
@@ -20,12 +25,13 @@ def init(cfg):
     remove = []
     for tme, args in items(Timers.timers):
         orig, channel, txt = args
-        for origin in Fleet.like(orig):
+        for origin in Broker.like(orig):
             if not origin:
                 continue
             diff = float(tme) - time.time()
             if diff > 0:
-                timer = Timed(diff, Fleet.say, origin, channel, txt)
+                bot = Broker.get(origin)
+                timer = Timed(diff, bot.say, channel, txt)
                 timer.start()
             else:
                 remove.append(tme)
@@ -194,7 +200,7 @@ def tmr(event):
         hour =  get_hour(event.rest)
         if hour:
             target += hour
-    target += random.random() 
+    target += rand.random() 
     if not target or time.time() > target:
         event.reply("already passed given time.")
         return result
@@ -202,7 +208,8 @@ def tmr(event):
     txt = " ".join(event.args[1:])
     add(target, event.orig, event.channel, txt)
     write(Timers.timers, Timers.path or getpath(Timers.timers))
-    timer = Timed(diff, Fleet.say, event.orig, event.channel, txt)
+    bot = Broker.get(event.orig)
+    timer = Timed(diff, bot.say, event.orig, event.channel, txt)
     timer.start()
     event.reply("ok " +  elapsed(diff))
 

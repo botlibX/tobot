@@ -2,7 +2,6 @@
 # This file is placed in the Public Domain.
 
 
-import inspect
 import logging
 import os
 import queue
@@ -15,17 +14,22 @@ import time
 sys.path.insert(0, os.getcwd())
 
 
-from tob.clients import Client, Config, Output
-from tob.command import Commands, command, parse, scan
-from tob.handler import Event
-from tob.loggers import level
+from tob.clients import Client
+from tob.command import command, parse, scan
+from tob.configs import Config, configure
+from tob.message import Message
+from tob.outputs import Output
 from tob.package import Mods, getmod, modules
-from tob.persist import Workdir, moddir, skel
 from tob.threads import launch, threadhook
-from tob.utility import elapsed, where
+from tob.utility import elapsed
+from tob.workdir import Workdir
 
 
-Mods.init("tobot.modules")
+NAME = "tobot"
+VERSION = 150
+
+
+configure(NAME, VERSION)
 Workdir.wdr = ".test"
 
 
@@ -55,10 +59,10 @@ class Pool:
         Pool.clients.append(client)
 
     @staticmethod
-    def init(cls, nr, verbose=False):
+    def init(clz, nr):
         Pool.nrcpu = nr
         for _x in range(Pool.nrcpu):
-            clt = cls()
+            clt = clz()
             clt.start()
             Pool.add(clt)
 
@@ -97,15 +101,15 @@ def consume():
 def payload(todo):
     for cmd, example in todo.items():
         for ex in example:
-            evt = Event()
+            evt = Message()
             evt.text = f"{cmd} {ex}"
-            evt.type = "command"
+            evt.kind = "command"
             Pool.put(evt)
             events.put(evt)
 
 
-def scanner(names=[]):
-    if not names:
+def scanner(names=None):
+    if names is None:
         names = modules()
     mods = []
     for name in names:
@@ -127,7 +131,6 @@ def main():
     if "v" in Config.opts:
         banner(Config.name, Config.version)
     scanner()
-    args = sys.argv[1:]
     if "z" in Config.opts:
         Pool.init(CLI, os.cpu_count())
     else:

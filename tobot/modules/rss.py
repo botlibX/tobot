@@ -19,13 +19,15 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote_plus, urlencode
 
 
-from tob.clients import Fleet
+from tob.brokers import Broker
+from tob.locater import find, fntime, last
 from tob.methods import fmt
 from tob.objects import Object, update
-from tob.persist import find, fntime, getpath, last, write
+from tob.persist import write
 from tob.repeats import Repeater
 from tob.threads import launch
 from tob.utility import elapsed, spl
+from tob.workdir import getpath
 
 
 DEBUG = False
@@ -130,7 +132,7 @@ class Fetcher(Object):
             txt = f"[{feedname}] "
         for obj in result:
             txt2 = txt + self.display(obj)
-            for bot in Fleet.all():
+            for bot in Broker.all():
                 bot.announce(txt2)
         return counter
 

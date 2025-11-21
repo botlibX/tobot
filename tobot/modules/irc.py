@@ -11,16 +11,18 @@ import threading
 import time
 
 
-from tob.clients import Config as Main
-from tob.clients import Output
-from tob.command import Fleet, command
-from tob.handler import Event as IEvent
-from tob.loggers import LEVELS
+from tob.brokers import Broker
+from tob.command import command
+from tob.configs import Config as Main
+from tob.defines import LEVELS
+from tob.locater import last
+from tob.message import Message
 from tob.methods import edit, fmt
 from tob.objects import Object, keys
-from tob.persist import getpath, last, write
+from tob.outputs import Output
+from tob.persist import write
 from tob.threads import launch
-from tob.utility import where
+from tob.workdir import getpath
 
 
 IGNORE = ["PING", "PONG", "PRIVMSG"] 
@@ -34,20 +36,20 @@ def init(cfg):
     irc.start()
     irc.events.joined.wait(30.0)
     if irc.events.joined.is_set():
-        logging.warning(fmt(irc.cfg, skip=["name", "password", "realname", "username"]))
+        logging.warning(fmt(irc.cfg, skip=["name", "word", "realname", "username"]))
     else:
         irc.stop()
     return irc
 
 
-class Config:
+class Config(Object):
 
     channel = f"#{Main.name}"
     commands = True
     control = "!"
     name = Main.name
     nick = Main.name
-    password = ""
+    word = ""
     port = 6667
     realname = Main.name
     sasl = False
@@ -59,6 +61,7 @@ class Config:
     version = 1
 
     def __init__(self):
+        super().__init__()
         self.channel = Config.channel
         self.commands = Config.commands
         self.name = Config.name
@@ -68,8 +71,14 @@ class Config:
         self.server = Config.server
         self.username = Config.username
 
+    def __getattr__(self, name):
+        if name not in self:
+            return ""
+        return self.__getattribute__(name)
+            
 
-class Event(IEvent):
+
+class Event(Message):
 
     def __init__(self):
         super().__init__()
@@ -86,7 +95,7 @@ class Event(IEvent):
         self.text = ""
 
     def dosay(self, txt):
-        bot = Fleet.get(self.orig)
+        bot = Broker.get(self.orig)
         bot.dosay(self.channel, txt)
 
 
@@ -152,7 +161,7 @@ class IRC(Output):
         self.state.nrconnect += 1
         self.events.connected.clear()
         self.events.joined.clear()
-        if self.cfg.password:
+        if self.cfg.word or self.cfg.password:
             logging.debug("using SASL")
             self.cfg.sasl = True
             self.cfg.port = "6697"
@@ -337,7 +346,7 @@ class IRC(Output):
             obj.origin = obj.origin[1:]
             if len(arguments) > 1:
                 obj.command = arguments[1]
-                obj.type = obj.command
+                obj.kind = obj.command
             if len(arguments) > 2:
                 txtlist = []
                 adding = False
@@ -376,7 +385,7 @@ class IRC(Output):
             obj.rest = " ".join(obj.args)
         obj.orig = object.__repr__(self)
         obj.text = obj.text.strip()
-        obj.type = obj.command
+        obj.kind = obj.command
         return obj
 
     def poll(self):
@@ -502,33 +511,33 @@ class IRC(Output):
 
 
 def cb_auth(evt):
-    bot = Fleet.get(evt.orig)
-    bot.docommand(f"AUTHENTICATE {bot.cfg.password}")
+    bot = Broker.get(evt.orig)
+    bot.docommand(f"AUTHENTICATE {bot.cfg.word or bot.cfg.password}")
 
 
 def cb_cap(evt):
-    bot = Fleet.get(evt.orig)
-    if bot.cfg.password and "ACK" in evt.arguments:
+    bot = Broker.get(evt.orig)
+    if (bot.cfg.word or bot.cfg.password) and "ACK" in evt.arguments:
         bot.direct("AUTHENTICATE PLAIN")
     else:
         bot.direct("CAP REQ :sasl")
 
 
 def cb_error(evt):
-    bot = Fleet.get(evt.orig)
+    bot = Broker.get(evt.orig)
     bot.state.nrerror += 1
     bot.state.error = evt.text
     logging.debug(fmt(evt))
 
 
 def cb_h903(evt):
-    bot = Fleet.get(evt.orig)
+    bot = Broker.get(evt.orig)
     bot.direct("CAP END")
     bot.events.authed.set()
 
 
 def cb_h904(evt):
-    bot = Fleet.get(evt.orig)
+    bot = Broker.get(evt.orig)
     bot.direct("CAP END")
     bot.events.authed.set()
 
@@ -542,24 +551,24 @@ def cb_log(evt):
 
 
 def cb_ready(evt):
-    bot = Fleet.get(evt.orig)
+    bot = Broker.get(evt.orig)
     bot.events.ready.set()
 
 
 def cb_001(evt):
-    bot = Fleet.get(evt.orig)
+    bot = Broker.get(evt.orig)
     bot.events.logon.set()
 
 
 def cb_notice(evt):
-    bot = Fleet.get(evt.orig)
+    bot = Broker.get(evt.orig)
     if evt.text.startswith("VERSION"):
         txt = f"\001VERSION {Config.name.upper()} {Config.version} - {bot.cfg.username}\001"
         bot.docommand("NOTICE", evt.channel, txt)
 
 
 def cb_privmsg(evt):
-    bot = Fleet.get(evt.orig)
+    bot = Broker.get(evt.orig)
     if not bot.cfg.commands:
         return
     if evt.text:
@@ -578,7 +587,7 @@ def cb_privmsg(evt):
 
 
 def cb_quit(evt):
-    bot = Fleet.get(evt.orig)
+    bot = Broker.get(evt.orig)
     logging.debug("quit from %s", bot.cfg.server)
     bot.state.nrerror += 1
     bot.state.error = evt.text
@@ -597,7 +606,7 @@ def cfg(event):
             fmt(
                 config,
                 keys(config),
-                skip="control,name,password,realname,sleep,username".split(","),
+                skip="control,name,word,realname,sleep,username".split(","),
             )
         )
     else:
@@ -610,7 +619,7 @@ def mre(event):
     if not event.channel:
         event.reply("channel is not set.")
         return
-    bot = Fleet.get(event.orig)
+    bot = Broker.get(event.orig)
     if "cache" not in dir(bot):
         event.reply("bot is missing cache")
         return

@@ -12,22 +12,26 @@ import time
 sys.path.insert(0, os.getcwd())
 
 
-from tob.clients import Client, Config
 from tob.command import Commands, command, parse, scan
-from tob.handler import Event
-from tob.loggers import level
-from tob.objects import update
-from tob.package import Mods, getmod, modules
-from tob.persist import Workdir, moddir, pidname
+from tob.clients import Client
+from tob.configs import Config, configure
+from tob.defines import SYSTEMD
+from tob.message import Message
+from tob.package import getmod, modules
 from tob.threads import launch, threadhook
 from tob.utility import daemon, forever, pidfile, privileges, wrap
-from tob.utility import check, spl, where, wrapped
+from tob.utility import check, level, spl, wrapped
+from tob.workdir import pidname
 
 
-NAME = "tobot"
+NAME = "tobot" 
+VERSION = 150
 
-Config.name = NAME
-Config.version = 8
+
+threading.excepthook = threadhook
+
+
+"clients"
 
 
 class CLI(Client):
@@ -49,13 +53,13 @@ class Console(CLI):
         event.wait()
 
     def poll(self):
-        evt = Event()
+        evt = Message()
         evt.text = input("> ")
-        evt.type = "command"
+        evt.kind = "command"
         return evt
 
 
-"in the begining"
+"in the beginning"
 
 
 def banner(name, version):
@@ -68,12 +72,6 @@ def banner(name, version):
                                    logging.getLevelName(logger.getEffectiveLevel())
                                   ))
     sys.stdout.flush()
-
-
-def boot():
-    Config.name = NAME
-    Workdir.init(NAME)
-    Mods.init("tobot.modules", ignore="mbx,rst,udp,web", local=True)
 
 
 def scanner(names, init=False):
@@ -95,7 +93,7 @@ def background():
     daemon(check("v"))
     privileges()
     level("info")
-    scanner(modules(), True)
+    scanner(modules(), False)
     Commands.add(cmd, ver)
     pidfile(pidname(Config.name))
     forever()
@@ -127,7 +125,7 @@ def control():
     Commands.add(cmd, srv, ver)
     csl = CLI()
     csl.silent = False
-    evt = Event()
+    evt = Message()
     evt.orig = repr(csl)
     evt.text = " ".join(sys.argv[1:])
     evt.type = "command"
@@ -139,7 +137,7 @@ def service():
     privileges()
     level("info")
     banner(Config.name, Config.version)
-    scanner(modules(), True)
+    scanner(modules(), False)
     Commands.add(cmd, ver)
     pidfile(pidname(Config.name))
     forever()
@@ -155,21 +153,7 @@ def cmd(event):
 def srv(event):
     import getpass
     name = getpass.getuser()
-    event.reply(TXT % (Config.name.upper(), name, name, name, Config.name))
-
-
-TXT = """[Unit]
-Description=%s
-After=network-online.target
-
-[Service]
-Type=simple
-User=%s
-Group=%s
-ExecStart=/home/%s/.local/bin/%s -s
-
-[Install]
-WantedBy=multi-user.target"""
+    event.reply(SYSTEMD % (Config.name.upper(), name, name, name, Config.name))
 
 
 def ver(event):
@@ -179,11 +163,8 @@ def ver(event):
 "runtime"
 
 
-threading.excepthook = threadhook
-
-
 def main():
-    boot()
+    configure(NAME, VERSION)
     if check("c"):
         wrap(console)
     elif check("d"):

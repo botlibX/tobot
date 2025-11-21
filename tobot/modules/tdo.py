@@ -4,8 +4,9 @@
 import time
 
 
+from tob.locater import find, fntime
 from tob.objects import Object
-from tob.persist import find, fntime, write
+from tob.persist import write
 from tob.utility import elapsed
 
 
@@ -35,7 +36,7 @@ def dne(event):
 def tdo(event):
     if not event.rest:
         nmr = 0
-        for fnm, obj in find('todo'):
+        for fnm, obj in find('todo', event.gets):
             lap = elapsed(time.time()-fntime(fnm))
             event.reply(f'{nmr} {obj.txt} {lap}')
             nmr += 1
