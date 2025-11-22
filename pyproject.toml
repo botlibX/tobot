@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tobot"
-version = "9"
+version = "10"
 authors = [
     {name = "Bart Thate", email = "bthate@dds.nl" },
 ]
@@ -35,11 +35,10 @@ packages = [
     'tobot',
     'tobot.modules',
     'tobot.network',
-    'tobot.network.html',
     'tobot.nucleus'
 ]
 include-package-data = true
 
 
 [tool.setuptools.package-data]
-"tobot.network.html" = ["*"]
+"tobot.nucleus" = ["*"]
