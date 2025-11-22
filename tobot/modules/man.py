@@ -190,5 +190,8 @@ C O P Y R I G H T
 """
 
 
+from tob.message import reply
+
+
 def man(event):
-    event.reply(__doc__)
+    reply(event, __doc__)

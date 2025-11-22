@@ -7,7 +7,7 @@ import logging
 from random import SystemRandom
 
 
-from tob.brokers import Broker
+from tob.brokers import all
 from tob.message import Message
 from tob.repeats import Repeater
 
@@ -23,7 +23,7 @@ def init(cfg):
 
 
 def wsd(event):
-    for bot in Broker.all():
+    for bot in all("announce"):
         bot.announce(rand.choice(TXT.split("\n")).strip()[2:])
 
 

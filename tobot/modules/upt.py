@@ -4,6 +4,7 @@
 import time
 
 
+from tob.message import reply
 from tob.utility import elapsed
 
 
@@ -11,4 +12,4 @@ STARTTIME = time.time()
 
 
 def upt(event):
-    event.reply(elapsed(time.time()-STARTTIME))
+    reply(event, elapsed(time.time()-STARTTIME))

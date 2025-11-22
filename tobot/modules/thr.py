@@ -5,6 +5,7 @@ import threading
 import time
 
 
+from tob.message import reply
 from tob.utility import elapsed
 
 
@@ -28,6 +29,6 @@ def thr(event):
         lap = elapsed(uptime)
         res.append(f"{txt}/{lap}")
     if res:
-        event.reply(" ".join(res))
+        reply(event, " ".join(res))
     else:
-        event.reply("no threads")
+        reply(event, "no threads")

@@ -17,23 +17,24 @@ sys.path.insert(0, os.getcwd())
 from tob.clients import Client
 from tob.command import command, parse, scan
 from tob.configs import Config, configure
-from tob.message import Message
+from tob.message import Message, wait
 from tob.outputs import Output
-from tob.package import Mods, getmod, modules
+from tob.package import Mods, get, modules
 from tob.threads import launch, threadhook
 from tob.utility import elapsed
 from tob.workdir import Workdir
 
 
 NAME = "tobot"
-VERSION = 150
+VERSION = 440
 
 
-configure(NAME, VERSION)
+configure(NAME, VERSION, "", True)
 Workdir.wdr = ".test"
 
 
 events = queue.Queue()
+threading.excepthook = threadhook
 
 
 class CLI(Output):
@@ -92,7 +93,7 @@ def consume():
     while True:
         try:
             event = events.get()
-            event.wait()
+            wait(event)
             events.task_done()
         except (KeyboardInterrupt, EOFError):
             os._exit(0)
@@ -115,7 +116,7 @@ def scanner(names=None):
     for name in names:
         if name in Mods.ignore:
             continue
-        mod = getmod(name)
+        mod = get(name)
         if mod:
             mods.append(mod)
             scan(mod)

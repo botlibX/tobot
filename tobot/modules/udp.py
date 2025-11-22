@@ -9,7 +9,8 @@ import threading
 import time
 
 
-from tob.brokers import Broker
+from tob.brokers import all
+from tob.message import reply
 from tob.objects import Object
 from tob.threads import launch
 
@@ -46,7 +47,7 @@ class UDP(Object):
     def output(self, txt, addr=None):
         if addr:
             Cfg.addr = addr
-        for bot in Broker.all():
+        for bot in all("announce"):
             bot.announce(txt.replace("\00", ""))
 
     def loop(self):
@@ -93,7 +94,7 @@ def udp(event):
                          [],
                          0.0
                         )[0]:
-        event.reply("udp <text>")
+        reply(event, "udp <text>")
         return
     size = 0
     while 1:

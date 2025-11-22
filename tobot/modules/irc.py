@@ -11,16 +11,15 @@ import threading
 import time
 
 
-from tob.brokers import Broker
+from tob.brokers import get
 from tob.command import command
 from tob.configs import Config as Main
 from tob.defines import LEVELS
-from tob.locater import last
-from tob.message import Message
+from tob.message import Message, reply
 from tob.methods import edit, fmt
 from tob.objects import Object, keys
 from tob.outputs import Output
-from tob.persist import write
+from tob.persist import last, write
 from tob.threads import launch
 from tob.workdir import getpath
 
@@ -95,7 +94,7 @@ class Event(Message):
         self.text = ""
 
     def dosay(self, txt):
-        bot = Broker.get(self.orig)
+        bot = get(self.orig)
         bot.dosay(self.channel, txt)
 
 
@@ -199,7 +198,7 @@ class IRC(Output):
 
     def display(self, event):
         for key in sorted(event.result, key=lambda x: x):
-            txt = event.result.get(key)
+            txt = getattr(event.result, key)
             if not txt:
                 continue
             textlist = []
@@ -466,7 +465,7 @@ class IRC(Output):
     def say(self, channel, text):
         event = Event()
         event.channel = channel
-        event.reply(text)
+        reply(event, text)
         self.oput(event)
 
     def some(self):
@@ -511,12 +510,12 @@ class IRC(Output):
 
 
 def cb_auth(evt):
-    bot = Broker.get(evt.orig)
+    bot = get(evt.orig)
     bot.docommand(f"AUTHENTICATE {bot.cfg.word or bot.cfg.password}")
 
 
 def cb_cap(evt):
-    bot = Broker.get(evt.orig)
+    bot = get(evt.orig)
     if (bot.cfg.word or bot.cfg.password) and "ACK" in evt.arguments:
         bot.direct("AUTHENTICATE PLAIN")
     else:
@@ -524,20 +523,20 @@ def cb_cap(evt):
 
 
 def cb_error(evt):
-    bot = Broker.get(evt.orig)
+    bot = get(evt.orig)
     bot.state.nrerror += 1
     bot.state.error = evt.text
     logging.debug(fmt(evt))
 
 
 def cb_h903(evt):
-    bot = Broker.get(evt.orig)
+    bot = get(evt.orig)
     bot.direct("CAP END")
     bot.events.authed.set()
 
 
 def cb_h904(evt):
-    bot = Broker.get(evt.orig)
+    bot = get(evt.orig)
     bot.direct("CAP END")
     bot.events.authed.set()
 
@@ -551,24 +550,24 @@ def cb_log(evt):
 
 
 def cb_ready(evt):
-    bot = Broker.get(evt.orig)
+    bot = get(evt.orig)
     bot.events.ready.set()
 
 
 def cb_001(evt):
-    bot = Broker.get(evt.orig)
+    bot = get(evt.orig)
     bot.events.logon.set()
 
 
 def cb_notice(evt):
-    bot = Broker.get(evt.orig)
+    bot = get(evt.orig)
     if evt.text.startswith("VERSION"):
         txt = f"\001VERSION {Config.name.upper()} {Config.version} - {bot.cfg.username}\001"
         bot.docommand("NOTICE", evt.channel, txt)
 
 
 def cb_privmsg(evt):
-    bot = Broker.get(evt.orig)
+    bot = get(evt.orig)
     if not bot.cfg.commands:
         return
     if evt.text:
@@ -587,7 +586,7 @@ def cb_privmsg(evt):
 
 
 def cb_quit(evt):
-    bot = Broker.get(evt.orig)
+    bot = get(evt.orig)
     logging.debug("quit from %s", bot.cfg.server)
     bot.state.nrerror += 1
     bot.state.error = evt.text
@@ -602,41 +601,40 @@ def cfg(event):
     config = Config()
     fnm = last(config)
     if not event.sets:
-        event.reply(
-            fmt(
-                config,
-                keys(config),
-                skip="control,name,word,realname,sleep,username".split(","),
-            )
-        )
+        reply(event,
+              fmt(
+                  config,
+                  keys(config),
+                  skip="control,name,word,realname,sleep,username".split(","),
+              ))
     else:
         edit(config, event.sets)
         write(config, fnm or getpath(config))
-        event.reply("ok")
+        reply(event, "ok")
 
 
 def mre(event):
     if not event.channel:
-        event.reply("channel is not set.")
+        reply(event, "channel is not set.")
         return
-    bot = Broker.get(event.orig)
+    bot = get(event.orig)
     if "cache" not in dir(bot):
-        event.reply("bot is missing cache")
+        reply(event, "bot is missing cache")
         return
     if event.channel not in bot.cache:
-        event.reply(f"no output in {event.channel} cache.")
+        reply(event, f"no output in {event.channel} cache.")
         return
     for _x in range(3):
         txt = bot.gettxt(event.channel)
-        event.reply(txt)
+        reply(event, txt)
     size = bot.size(event.channel)
     if size != 0:
-        event.reply(f"{size} more in cache")
+        reply(event, f"{size} more in cache")
 
 
 def pwd(event):
     if len(event.args) != 2:
-        event.reply("pwd <nick> <password>")
+        reply(event, "pwd <nick> <password>")
         return
     arg1 = event.args[0]
     arg2 = event.args[1]
@@ -644,7 +642,7 @@ def pwd(event):
     enc = txt.encode("ascii")
     base = base64.b64encode(enc)
     dcd = base.decode("ascii")
-    event.reply(dcd)
+    reply(event, dcd)
 
 
 "utility"

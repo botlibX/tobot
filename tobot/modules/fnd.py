@@ -4,8 +4,9 @@
 import time
 
 
-from tob.locater import find, fntime
+from tob.message import reply
 from tob.methods import fmt
+from tob.persist import find, fntime
 from tob.utility import elapsed
 from tob.workdir import types
 
@@ -14,14 +15,14 @@ def fnd(event):
     if not event.rest:
         res = sorted([x.split('.')[-1].lower() for x in types()])
         if res:
-            event.reply(",".join(res))
+            reply(event, ",".join(res))
         else:
-            event.reply("no data yet.")
+            reply(event, "no data yet.")
         return
     otype = event.args[0]
     nmr = 0
     for fnm, obj in list(find(otype, event.gets)):
-        event.reply(f"{nmr} {fmt(obj)} {elapsed(time.time()-fntime(fnm))}")
+        reply(event, f"{nmr} {fmt(obj)} {elapsed(time.time()-fntime(fnm))}")
         nmr += 1
     if not nmr:
-        event.reply("no result")
+        reply(event, "no result")

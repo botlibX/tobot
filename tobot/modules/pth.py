@@ -4,13 +4,14 @@
 import os
 
 
-a = os.path.abspath
-d = os.path.dirname
-p = os.path.join
-
-
-PATH = p(d(d(__file__)), "network", "html","index.html")
+from tob.message import reply
+from tob.package import get as mget
 
 
 def pth(event):
-    event.reply(f"file://{PATH}")
+    mod = mget("Config.name}.network")
+    if not mod:
+        reply(event, "can't find web directory.")
+        return
+    path = os.path.join(mod.__path__[0], "html", "index.html")
+    reply(event, f"file://{path}")

@@ -19,11 +19,11 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote_plus, urlencode
 
 
-from tob.brokers import Broker
-from tob.locater import find, fntime, last
+from tob.brokers import all
+from tob.message import reply
 from tob.methods import fmt
 from tob.objects import Object, update
-from tob.persist import write
+from tob.persist import find, fntime, last, write
 from tob.repeats import Repeater
 from tob.threads import launch
 from tob.utility import elapsed, spl
@@ -132,7 +132,7 @@ class Fetcher(Object):
             txt = f"[{feedname}] "
         for obj in result:
             txt2 = txt + self.display(obj)
-            for bot in Broker.all():
+            for bot in all("announce"):
                 bot.announce(txt2)
         return counter
 
@@ -354,19 +354,19 @@ def useragent(txt):
 
 def dpl(event):
     if len(event.args) < 2:
-        event.reply("dpl <stringinurl> <item1,item2>")
+        reply(event, "dpl <stringinurl> <item1,item2>")
         return
     setter = {"display_list": event.args[1]}
     for fnm, feed in find("rss.Rss", {"rss": event.args[0]}):
         if feed:
             update(feed, setter)
             write(feed, fnm)
-    event.reply("ok")
+    reply(event, "ok")
 
 
 def exp(event):
     with importlock:
-        event.reply(TEMPLATE)
+        reply(event, TEMPLATE)
         nrs = 0
         for _fn, ooo in find("rss.Rss"):
             nrs += 1
@@ -374,19 +374,19 @@ def exp(event):
             update(obj, ooo)
             name = f"url{nrs}"
             txt = f'<outline name="{name}" display_list="{obj.display_list}" xmlUrl="{obj.rss}"/>'
-            event.reply(" " * 12 + txt)
-        event.reply(" " * 8 + "</outline>")
-        event.reply("    <body>")
-        event.reply("</opml>")
+            reply(event, " " * 12 + txt)
+        reply(event, " " * 8 + "</outline>")
+        reply(event, "    <body>")
+        reply(event, "</opml>")
 
 
 def imp(event):
     if not event.args:
-        event.reply("imp <filename>")
+        reply(event, "imp <filename>")
         return
     fnm = event.args[0]
     if not os.path.exists(fnm):
-        event.reply(f"no {fnm} file found.")
+        reply(event, f"no {fnm} file found.")
         return
     with importlock:
         with open(fnm, "r", encoding="utf-8") as file:
@@ -413,14 +413,14 @@ def imp(event):
             write(feed)
             nrs += 1
     if nrskip:
-        event.reply(f"skipped {nrskip} urls.")
+        reply(event, f"skipped {nrskip} urls.")
     if nrs:
-        event.reply(f"added {nrs} urls.")
+        reply(event, f"added {nrs} urls.")
 
 
 def nme(event):
     if len(event.args) != 2:
-        event.reply("nme <stringinurl> <name>")
+        reply(event, "nme <stringinurl> <name>")
         return
     selector = {"rss": event.args[0]}
     for fnm, fed in find("rss.Rss", selector):
@@ -429,12 +429,12 @@ def nme(event):
         if feed:
             feed.name = str(event.args[1])
             write(feed, fnm)
-    event.reply("ok")
+    reply(event, "ok")
 
 
 def rem(event):
     if len(event.args) != 1:
-        event.reply("rem <stringinurl>")
+        reply(event, "rem <stringinurl>")
         return
     for fnm, fed in find("rss.Rss"):
         feed = Rss()
@@ -444,13 +444,13 @@ def rem(event):
         if feed:
             feed.__deleted__ = True
             write(feed, fnm)
-            event.reply("ok")
+            reply(event, "ok")
             break
 
 
 def res(event):
     if len(event.args) != 1:
-        event.reply("res <stringinurl>")
+        reply(event, "res <stringinurl>")
         return
     for fnm, fed in find("rss.Rss", removed=True):
         feed = Rss()
@@ -460,7 +460,7 @@ def res(event):
         if feed:
             feed.__deleted__ = False
             write(feed, fnm)
-    event.reply("ok")
+    reply(event, "ok")
 
 
 def rss(event):
@@ -470,22 +470,22 @@ def rss(event):
             nrs += 1
             elp = elapsed(time.time() - fntime(fnm))
             txt = fmt(fed)
-            event.reply(f"{nrs} {txt} {elp}")
+            reply(event, f"{nrs} {txt} {elp}")
         if not nrs:
-            event.reply("no feed found.")
+            reply(event, "no feed found.")
         return
     url = event.args[0]
     if "http://" not in url and "https://" not in url:
-        event.reply("i need an url")
+        reply(event, "i need an url")
         return
     for fnm, result in find("rss.Rss", {"rss": url}):
         if result:
-            event.reply(f"{url} is known")
+            reply(event, f"{url} is known")
             return
     feed = Rss()
     feed.rss = event.args[0]
     write(feed)
-    event.reply("ok")
+    reply(event, "ok")
 
 
 def syn(event):
@@ -498,7 +498,7 @@ def syn(event):
     for thr in thrs:
         thr.join()
         nrs += 1
-    event.reply(f"{nrs} feeds synced")
+    reply(event, f"{nrs} feeds synced")
 
 
 TEMPLATE = """<opml version="1.0">

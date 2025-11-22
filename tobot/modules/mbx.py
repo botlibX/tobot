@@ -6,10 +6,11 @@ import os
 import time
 
 
-from tob.locater import find
+from tob.defines import MONTH
+from tob.message import reply
 from tob.methods import fmt
 from tob.objects import Object, keys, update
-from tob.persist import write
+from tob.persist import find, write
 from tob.utility import elapsed, extract_date
 
 
@@ -73,22 +74,22 @@ def eml(event):
         if obj:
             obj = obj[-1]
             tme = getattr(obj, "Date", "")
-            event.reply(f'{event.index} {fmt(obj, args, plain=True)} {elapsed(time.time() - extract_date(todate(tme)))}')
+            reply(event, f'{event.index} {fmt(obj, args, plain=True)} {elapsed(time.time() - extract_date(todate(tme)))}')
     else:
         for _fn, obj in result:
             nrs += 1
             tme = getattr(obj, "Date", "")
-            event.reply(f'{nrs} {fmt(obj, args, plain=True)} {elapsed(time.time() - extract_date(todate(tme)))}')
+            reply(event, f'{nrs} {fmt(obj, args, plain=True)} {elapsed(time.time() - extract_date(todate(tme)))}')
     if not result:
-        event.reply("no emails found.")
+        reply(event, "no emails found.")
 
 
 def mbx(event):
     if not event.args:
-        event.reply("mbx <path>")
+        reply(event, "mbx <path>")
         return
     fnm = os.path.expanduser(event.args[0])
-    event.reply("reading from %s" % fnm)
+    reply(event, "reading from %s" % fnm)
     if os.path.isdir(fnm):
         thing = mailbox.Maildir(fnm, create=False)
     elif os.path.isfile(fnm):
@@ -111,20 +112,4 @@ def mbx(event):
         write(obj)
         nrs += 1
     if nrs:
-        event.reply("ok %s" % nrs)
-
-
-MONTH = {
-    'Jan': 1,
-    'Feb': 2,
-    'Mar': 3,
-    'Apr': 4,
-    'May': 5,
-    'Jun': 6,
-    'Jul': 7,
-    'Aug': 8,
-    'Sep': 9,
-    'Oct': 10,
-    'Nov': 11,
-    'Dec': 12
-}
+        reply(event, "ok %s" % nrs)

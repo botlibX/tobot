@@ -12,26 +12,24 @@ import time
 sys.path.insert(0, os.getcwd())
 
 
+from tob.command import add as cadd
 from tob.command import Commands, command, parse, scan
 from tob.clients import Client
 from tob.configs import Config, configure
 from tob.defines import SYSTEMD
-from tob.message import Message
-from tob.package import getmod, modules
+from tob.message import Message, reply, wait
+from tob.package import get as mget
+from tob.package import modules
 from tob.threads import launch, threadhook
 from tob.utility import daemon, forever, pidfile, privileges, wrap
 from tob.utility import check, level, spl, wrapped
 from tob.workdir import pidname
 
 
+IGNORE = ""
+LOCAL = True
 NAME = "tobot" 
-VERSION = 150
-
-
-threading.excepthook = threadhook
-
-
-"clients"
+VERSION = 440
 
 
 class CLI(Client):
@@ -50,7 +48,7 @@ class Console(CLI):
         if not event.text:
             return
         super().callback(event)
-        event.wait()
+        wait(event)
 
     def poll(self):
         evt = Message()
@@ -77,7 +75,7 @@ def banner(name, version):
 def scanner(names, init=False):
     mods = []
     for name in names:
-        mod = getmod(name)
+        mod = mget(name)
         if mod:
             scan(mod)
         if init and "init" in dir(mod):
@@ -94,7 +92,7 @@ def background():
     privileges()
     level("info")
     scanner(modules(), False)
-    Commands.add(cmd, ver)
+    cadd(cmd, ver)
     pidfile(pidname(Config.name))
     forever()
 
@@ -110,7 +108,7 @@ def console():
         mods = modules()
     else:
         mods = spl(Config.sets.get("init", ""))
-    Commands.add(cmd, ver)
+    cadd(cmd, ver)
     csl = Console()
     for _mod, thr in scanner(mods, True):
         thr.join(30.0)
@@ -122,7 +120,7 @@ def control():
     if len(sys.argv) == 1:
         return
     scanner(modules(), False)
-    Commands.add(cmd, srv, ver)
+    cadd(cmd, srv, ver)
     csl = CLI()
     csl.silent = False
     evt = Message()
@@ -130,7 +128,7 @@ def control():
     evt.text = " ".join(sys.argv[1:])
     evt.type = "command"
     command(evt)
-    evt.wait()
+    wait(evt)
 
 
 def service():
@@ -138,7 +136,7 @@ def service():
     level("info")
     banner(Config.name, Config.version)
     scanner(modules(), False)
-    Commands.add(cmd, ver)
+    cadd(cmd, ver)
     pidfile(pidname(Config.name))
     forever()
 
@@ -147,24 +145,26 @@ def service():
 
 
 def cmd(event):
-    event.reply(",".join(sorted(Commands.names or Commands.cmds)))
+    reply(event, ",".join(sorted(Commands.names or Commands.cmds)))
 
 
 def srv(event):
     import getpass
     name = getpass.getuser()
-    event.reply(SYSTEMD % (Config.name.upper(), name, name, name, Config.name))
+    reply(event, SYSTEMD % (Config.name.upper(), name, name, name, Config.name))
 
 
 def ver(event):
-    event.reply(f"{Config.name.upper()} {Config.version}")
+    reply(event, f"{Config.name.upper()} {Config.version}")
 
 
 "runtime"
 
 
 def main():
-    configure(NAME, VERSION)
+    configure(NAME, VERSION, IGNORE, LOCAL)
+    if not check("b"):
+        threading.excepthook = threadhook
     if check("c"):
         wrap(console)
     elif check("d"):
