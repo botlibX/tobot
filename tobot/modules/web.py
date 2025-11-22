@@ -110,7 +110,6 @@ class HTTPHandler(BaseHTTPRequestHandler):
         if self.path == "/":
             self.path = "index.html"
         self.path = Cfg.path + os.sep + self.path
-        print(self.path)
         if not os.path.exists(self.path):
             self.write_header("text/html")
             self.send_response(404)

@@ -35,10 +35,18 @@ packages = [
     'tobot',
     'tobot.modules',
     'tobot.network',
-    'tobot.nucleus'
+    'tobot.nucleus',
+    "tobot.nucleus.pdf",
+    "tobot.nucleus._images",
+    "tobot.nucleus._static"
 ]
 include-package-data = true
 
 
 [tool.setuptools.package-data]
+"tobot.network" = ["*"]
 "tobot.nucleus" = ["*"]
+"tobot.nucleus.pdf"     = ["*"]
+"tobot.nucleus._images" = ["*"]
+"tobot.nucleus._static" = ["*"]
+
