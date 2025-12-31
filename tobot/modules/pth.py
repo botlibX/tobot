@@ -8,6 +8,5 @@ from tob.defines import Config, where
 
 
 def pth(event):
-    fn = where(Config)
-    path = os.path.join(fn, 'nucleus', "index.html")
+    path = os.path.join(Config.path, "nucleus", "index.html")
     event.reply(f"file://{path}")

@@ -19,7 +19,10 @@ sys.path.insert(0, os.getcwd())
 from tob.defines import SYSTEMD, CLI
 from tob.defines import Commands, Config, Default, Message, Workdir
 from tob.defines import command, enable, parse, launch, level, scan, spl
-from tob.defines import moddir, pidname, skel, where, wrapped
+from tob.defines import moddir, pidname, package, skel, where, wrapped
+
+
+import tobot.modules as MODS
 
 
 "config"
@@ -32,6 +35,7 @@ Config.init = ""
 Config.level = "info"
 Config.name = "tobot"
 Config.opts = ""
+Config.path = package(MODS)
 Config.sets = Default()
 Config.txt = " ".join(sys.argv[1:])
 Config.version = 111
@@ -210,11 +214,7 @@ class Mods:
 
 
 def configure():
-    "configure directories to load modules from."
-    dirs(f"{Config.name}.modules", os.path.dirname(inspect.getfile(importer(f"{Config.name}.modules"))))
-    dirs("modules", moddir())
-    if "m" in Config.opts:
-        dirs("mods", "mods")
+    dirs(f"{Config.name}.modules", Config.path)
 
 
 def dirs(name: str, path):

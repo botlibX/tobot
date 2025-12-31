@@ -49,4 +49,3 @@ include-package-data = true
 "tobot.nucleus.pdf"     = ["*"]
 "tobot.nucleus._images" = ["*"]
 "tobot.nucleus._static" = ["*"]
-

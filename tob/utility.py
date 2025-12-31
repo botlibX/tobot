@@ -32,6 +32,11 @@ def md5sum(path):
         return hashlib.md5(txt, usedforsecurity=False).hexdigest()
 
 
+def package(pkg):
+    "return path to package"
+    return os.path.dirname(inspect.getfile(pkg))
+
+
 def spl(txt):
     "return list from command seperated string."
     try:
