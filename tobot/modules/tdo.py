@@ -4,10 +4,7 @@
 import time
 
 
-from tob.message import reply
-from tob.objects import Object
-from tob.persist import find, fntime, write
-from tob.utility import elapsed
+from tob.defines import Object, elapsed, find, fntime, write
 
 
 class Todo(Object):
@@ -19,7 +16,7 @@ class Todo(Object):
 
 def dne(event):
     if not event.args:
-        reply(event, "dne <txt>")
+        event.reply("dne <txt>")
         return
     selector = {'txt': event.args[0]}
     nmr = 0
@@ -27,10 +24,10 @@ def dne(event):
         nmr += 1
         obj.__deleted__ = True
         write(obj, fnm)
-        reply(event, "ok")
+        event.reply("ok")
         break
     if not nmr:
-        reply(event, "nothing todo")
+        event.reply("nothing todo")
 
 
 def tdo(event):
@@ -38,12 +35,12 @@ def tdo(event):
         nmr = 0
         for fnm, obj in find('todo', event.gets):
             lap = elapsed(time.time()-fntime(fnm))
-            reply(event, f'{nmr} {obj.txt} {lap}')
+            event.reply(f'{nmr} {obj.txt} {lap}')
             nmr += 1
         if not nmr:
-            reply(event, "no todo")
+            event.reply("no todo")
         return
     obj = Todo()
     obj.txt = event.rest
     write(obj)
-    reply(event, "ok")
+    event.reply("ok")

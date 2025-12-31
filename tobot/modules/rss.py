@@ -19,33 +19,26 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote_plus, urlencode
 
 
-from tob.brokers import all
-from tob.message import reply
-from tob.methods import fmt
-from tob.objects import Object, update
-from tob.persist import find, fntime, last, write
-from tob.repeats import Repeater
-from tob.threads import launch
-from tob.utility import elapsed, spl
-from tob.workdir import getpath
+from tob.defines import Config, Object, Repeater
+from tob.defines import elapsed, fmt, find, last, launch, objs
+from tob.defines import fntime, getpath, spl, update, write
 
 
-DEBUG = False
-
-
-def init(cfg):
+def init():
     fetcher = Fetcher()
     fetcher.start()
     if fetcher.seenfn:
         logging.warning("since %s", elapsed(time.time()-fntime(fetcher.seenfn)))
     else:
-        logging.warning("since %s", time.ctime(time.time()))
+        logging.warning("since %s", time.ctime(time.time()).replace("  ", " "))
     return fetcher
 
 
 fetchlock = _thread.allocate_lock()
 importlock = _thread.allocate_lock()
-errors: dict[str, float] = {}
+
+
+errors = {}
 skipped = []
 
 
@@ -132,7 +125,7 @@ class Fetcher(Object):
             txt = f"[{feedname}] "
         for obj in result:
             txt2 = txt + self.display(obj)
-            for bot in all("announce"):
+            for bot in objs("announce"):
                 bot.announce(txt2)
         return counter
 
@@ -285,7 +278,7 @@ def cdata(line):
 
 def getfeed(url, items):
     result = [Object(), Object()]
-    if DEBUG or url in errors and (time.time() - errors[url]) < 600:
+    if Config.debug or url in errors and (time.time() - errors[url]) < 600:
         return result
     try:
         rest = geturl(url)
@@ -354,19 +347,19 @@ def useragent(txt):
 
 def dpl(event):
     if len(event.args) < 2:
-        reply(event, "dpl <stringinurl> <item1,item2>")
+        event.reply("dpl <stringinurl> <item1,item2>")
         return
     setter = {"display_list": event.args[1]}
     for fnm, feed in find("rss.Rss", {"rss": event.args[0]}):
         if feed:
             update(feed, setter)
             write(feed, fnm)
-    reply(event, "ok")
+    event.reply("ok")
 
 
 def exp(event):
     with importlock:
-        reply(event, TEMPLATE)
+        event.reply(TEMPLATE)
         nrs = 0
         for _fn, ooo in find("rss.Rss"):
             nrs += 1
@@ -374,19 +367,19 @@ def exp(event):
             update(obj, ooo)
             name = f"url{nrs}"
             txt = f'<outline name="{name}" display_list="{obj.display_list}" xmlUrl="{obj.rss}"/>'
-            reply(event, " " * 12 + txt)
-        reply(event, " " * 8 + "</outline>")
-        reply(event, "    <body>")
-        reply(event, "</opml>")
+            event.reply(" " * 12 + txt)
+        event.reply(" " * 8 + "</outline>")
+        event.reply("    <body>")
+        event.reply("</opml>")
 
 
 def imp(event):
     if not event.args:
-        reply(event, "imp <filename>")
+        event.reply("imp <filename>")
         return
     fnm = event.args[0]
     if not os.path.exists(fnm):
-        reply(event, f"no {fnm} file found.")
+        event.reply(f"no {fnm} file found.")
         return
     with importlock:
         with open(fnm, "r", encoding="utf-8") as file:
@@ -413,14 +406,14 @@ def imp(event):
             write(feed)
             nrs += 1
     if nrskip:
-        reply(event, f"skipped {nrskip} urls.")
+        event.reply(f"skipped {nrskip} urls.")
     if nrs:
-        reply(event, f"added {nrs} urls.")
+        event.reply(f"added {nrs} urls.")
 
 
 def nme(event):
     if len(event.args) != 2:
-        reply(event, "nme <stringinurl> <name>")
+        event.reply("nme <stringinurl> <name>")
         return
     selector = {"rss": event.args[0]}
     for fnm, fed in find("rss.Rss", selector):
@@ -429,12 +422,12 @@ def nme(event):
         if feed:
             feed.name = str(event.args[1])
             write(feed, fnm)
-    reply(event, "ok")
+    event.reply("ok")
 
 
 def rem(event):
     if len(event.args) != 1:
-        reply(event, "rem <stringinurl>")
+        event.reply("rem <stringinurl>")
         return
     for fnm, fed in find("rss.Rss"):
         feed = Rss()
@@ -444,13 +437,13 @@ def rem(event):
         if feed:
             feed.__deleted__ = True
             write(feed, fnm)
-            reply(event, "ok")
+            event.reply("ok")
             break
 
 
 def res(event):
     if len(event.args) != 1:
-        reply(event, "res <stringinurl>")
+        event.reply("res <stringinurl>")
         return
     for fnm, fed in find("rss.Rss", removed=True):
         feed = Rss()
@@ -460,7 +453,7 @@ def res(event):
         if feed:
             feed.__deleted__ = False
             write(feed, fnm)
-    reply(event, "ok")
+    event.reply("ok")
 
 
 def rss(event):
@@ -470,26 +463,26 @@ def rss(event):
             nrs += 1
             elp = elapsed(time.time() - fntime(fnm))
             txt = fmt(fed)
-            reply(event, f"{nrs} {txt} {elp}")
+            event.reply(f"{nrs} {txt} {elp}")
         if not nrs:
-            reply(event, "no feed found.")
+            event.reply("no feed found.")
         return
     url = event.args[0]
     if "http://" not in url and "https://" not in url:
-        reply(event, "i need an url")
+        event.reply("i need an url")
         return
     for fnm, result in find("rss.Rss", {"rss": url}):
         if result:
-            reply(event, f"{url} is known")
+            event.reply(f"{url} is known")
             return
     feed = Rss()
     feed.rss = event.args[0]
-    write(feed)
-    reply(event, "ok")
+    fnm = write(feed)
+    event.reply("ok")
 
 
 def syn(event):
-    if DEBUG:
+    if Config.debug:
         return
     fetcher = Fetcher()
     fetcher.start(False)
@@ -498,7 +491,7 @@ def syn(event):
     for thr in thrs:
         thr.join()
         nrs += 1
-    reply(event, f"{nrs} feeds synced")
+    event.reply(f"{nrs} feeds synced")
 
 
 TEMPLATE = """<opml version="1.0">

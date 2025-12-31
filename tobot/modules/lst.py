@@ -1,13 +1,12 @@
 # This file is been placed in the Public Domain.
 
 
-from tob.message import reply
-from tob.workdir import types
+from tob.defines import kinds
 
 
 def lst(event):
-    tps = types()
+    tps = kinds()
     if tps:
-        reply(event, ",".join({x.split(".")[-1].lower() for x in tps}))
+        event.reply(",".join({x.split(".")[-1].lower() for x in tps}))
     else:
-        reply(event, "no data yet.")
+        event.reply("no data yet.")

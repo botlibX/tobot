@@ -1,26 +1,29 @@
 # This file is placed in the Public Domain.
 
 
+"Genocide model of the Netherlands since 4 March 2019."
+
+
 import datetime
 import logging
 import time
 
 
-from tob.brokers import all
-from tob.message import Message, reply
+from tob.brokers import objs
+from tob.message import Message
 from tob.objects import Object, construct, keys
 from tob.repeats import Repeater
-from tob.utility import elapsed
+from tob.timings import elapsed
 
 
-def init(cfg):
+def init():
     for key in keys(oorzaken):
         if "Psych" not in key:
             continue
         val = getattr(oorzaken, key, None)
         if val and int(val) > 10000:
             evt = Message()
-            evt.text = ""
+            evt.txt = ""
             evt.rest = key
             sec = seconds(val)
             name = aliases.get(key)
@@ -34,7 +37,7 @@ def init(cfg):
 
 DAY = 24*60*60
 YEAR = 365*DAY
-SOURCE = "https://github.com/bthate/."
+SOURCE = "https://github.com/bthate/tob"
 STARTDATE = "2019-03-04 00:00:00"
 STARTTIME = time.mktime(time.strptime(STARTDATE, "%Y-%m-%d %H:%M:%S"))
 
@@ -59,11 +62,11 @@ aliases["Zwangerschap"] = "pregnancy"
 aliases["Suicide"] = "suicide"
 
 
-demo = {}
-demo["gehandicapten"] = 2000000
-demo["ggz"] = 800000
-demo["population"] = 17440000
-demo["part"] = int(7000000000 / demo["population"])
+demo = Object()
+demo.gehandicapten = 2000000
+demo.ggz = 800000
+demo.population = 17440000
+demo.part = 7000000000 / demo.population
 
 
 jaar = {}
@@ -84,6 +87,7 @@ def getalias(txt):
             result = value
             break
     return result
+
 
 def getday():
     day = datetime.datetime.now()
@@ -137,8 +141,8 @@ def cbnow(_evt):
             continue
         nrtimes = int(delta/needed)
         txt += f"{getalias(nme)} {nrtimes} | "
-    txt += "https://pypi.org/project/."
-    for bot in all("announce"):
+    txt += "https://pypi.org/project/tob"
+    for bot in objs("announce"):
         bot.announce(txt)
 
 
@@ -161,7 +165,7 @@ def cbstats(evt):
             nryear,
             elapsed(needed)
         )
-        for bot in all("announce"):
+        for bot in objs("announce"):
             bot.announce(txt)
 
 
@@ -177,8 +181,8 @@ def dis(event):
             continue
         nrtimes = int(delta/needed)
         txt += f"{getalias(nme)} {nrtimes} | "
-    txt += "https://pypi.org/project/."
-    reply(event, txt)
+    txt += "https://pypi.org/project/tob"
+    event.reply(txt)
 
 
 def now(event):
@@ -192,14 +196,14 @@ def now(event):
         thisday = int(DAY % needed)
         txt = "%s %s #%s (%s/%s/%s) every %s" % (
             elapsed(delta),
-            getalias(nme),
+            getalias(nme).upper(),
             nrtimes,
             thisday,
             nrday,
             nryear,
             elapsed(needed)
         )
-        reply(event, txt)
+        event.reply(txt)
 
 
 "data"
@@ -207,7 +211,7 @@ def now(event):
 
 oor = """"Totaal onderliggende doodsoorzaken (aantal)";
          "1 Infectieuze en parasitaire ziekten/Totaal infectieuze en parasitaire zktn (aantal)";
-         "1 Infectieuze en parasitaire ziekten/1.1 Tubercutobe (aantal)";
+         "1 Infectieuze en parasitaire ziekten/1.1 Tuberculose (aantal)";
          "1 Infectieuze en parasitaire ziekten/1.2 Meningokokkeninfecties (aantal)";
          "1 Infectieuze en parasitaire ziekten/1.3 Virale hepatitis (aantal)";
          "1 Infectieuze en parasitaire ziekten/1.4 AIDS (aantal)";

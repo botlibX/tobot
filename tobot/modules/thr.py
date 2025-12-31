@@ -5,8 +5,7 @@ import threading
 import time
 
 
-from tob.message import reply
-from tob.utility import elapsed
+from tob.defines import elapsed
 
 
 STARTTIME = time.time()
@@ -20,15 +19,15 @@ def thr(event):
         if getattr(thread, "state", None) and getattr(thread, "sleep", None):
             uptime = thread.sleep - int(time.time() - thread.state["latest"])
         elif getattr(thread, "starttime", None):
-            uptime = int(time.time() - thread.starttime)
+            uptime = time.time() - thread.starttime
         else:
-            uptime = int(time.time() - STARTTIME)
+            uptime = time.time() - STARTTIME
         result.append((uptime, thread.name))
     res = []
     for uptime, txt in sorted(result, key=lambda x: x[0]):
         lap = elapsed(uptime)
         res.append(f"{txt}/{lap}")
     if res:
-        reply(event, " ".join(res))
+        event.reply(" ".join(res))
     else:
-        reply(event, "no threads")
+        event.reply("no threads")

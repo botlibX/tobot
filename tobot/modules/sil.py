@@ -1,17 +1,16 @@
 # This file is placed in the Public Domain.
 
 
-from tob.brokers import get as bget
-from tob.message import reply
+from tob.defines import broker
 
 
 def sil(event):
-    bot = bget(event.orig)
+    bot = broker(event.orig)
     bot.silent = True
-    reply(event, "ok")
+    event.reply("ok")
 
 
 def lou(event):
-    bot = bget(event.orig)
+    bot = broker(event.orig)
     bot.silent = False
-    reply(event, "ok")
+    event.reply("ok")

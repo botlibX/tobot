@@ -10,22 +10,12 @@ import time
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 
-from tob.objects import Object
-from tob.package import get
-from tob.threads import launch
-from tob.utility import importer
+from tob.defines import Config, Object, launch, where
 
 
-DEBUG = False
-PATH = ""
-
-
-def init(cfg):
-    mod = importer(f"{cfg.name}.nucleus")
-    if not mod:
-        logging.warning("can't find web directory")
-        return
-    Cfg.path = mod.__path__[0]
+def init():
+    Cfg.path = where(Config)
+    #Cfg.path = os.path.join(Mods.path, "network", "html")
     if not os.path.exists(os.path.join(Cfg.path, 'index.html')):
         logging.warning("no index.html")
         return
@@ -35,7 +25,7 @@ def init(cfg):
         logging.warning("http://%s:%s", Cfg.hostname, Cfg.port)
         return server
     except OSError as ex:
-        logging.warning(str(ex))
+        logging.warning("%s", str(ex))
 
 
 class Cfg:
@@ -105,7 +95,7 @@ class HTTPHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         if "favicon" in self.path:
             return
-        if DEBUG:
+        if Config.debug:
             return
         if self.path == "/":
             self.path = "index.html"

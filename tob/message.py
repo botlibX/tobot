@@ -1,12 +1,15 @@
 # This file is placed in the Public Domain.
 
 
+"only message."
+
+
 import threading
 import time
 
 
-from .default import Default
-from .objects import Object
+from .brokers import broker
+from .objects import Default
 
 
 class Message(Default):
@@ -14,28 +17,34 @@ class Message(Default):
     def __init__(self):
         super().__init__()
         self._ready = threading.Event()
-        self.result = Object()
+        self.result = {}
+        self.thr = None
+        self.args = []
+        self.index = 0
         self.kind = "event"
+        self.orig = ""
 
+    def display(self):
+        "call display on originating client."
+        bot = broker(self.orig)
+        bot.display(self)
 
-def ready(obj):
-    obj._ready.set()
+    def ready(self):
+        "flag message as ready."
+        self._ready.set()
 
+    def reply(self, text):
+        "add text to result."
+        self.result[time.time()] = text
 
-def reply(obj, text):
-    setattr(obj.result, str(time.time()), text)
-
-
-def wait(obj, timeout=None):
-    obj._ready.wait()
-    if obj._thr:
-        obj._thr.join(timeout)
+    def wait(self, timeout=0.0):
+        "wait for completion."
+        if self.thr:
+            self.thr.join(timeout)
+        self._ready.wait(timeout or None)
 
 
 def __dir__():
     return (
         'Message',
-        'ready',
-        'reply',
-        'wait'
-   )
+    )

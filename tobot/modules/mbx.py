@@ -6,12 +6,8 @@ import os
 import time
 
 
-from tob.defines import MONTH
-from tob.message import reply
-from tob.methods import fmt
-from tob.objects import Object, keys, update
-from tob.persist import find, write
-from tob.utility import elapsed, extract_date
+from tob.defines import MONTH, Object, date, elapsed, find, keys, update
+from tob.defines import fmt, write
 
 
 class Email(Object):
@@ -68,28 +64,31 @@ def eml(event):
         if key in args:
             args.remove(key)
     args = set(args)
-    result = sorted(find("email", event.gets), key=lambda x: extract_date(todate(getattr(x[1], "Date", ""))))
+    result = sorted(
+                    find("email", event.gets),
+                    key=lambda x: date(todate(getattr(x[1], "Date", "")))
+                   )
     if event.index:
         obj = result[event.index]
         if obj:
             obj = obj[-1]
             tme = getattr(obj, "Date", "")
-            reply(event, f'{event.index} {fmt(obj, args, plain=True)} {elapsed(time.time() - extract_date(todate(tme)))}')
+            event.reply(f'{event.index} {fmt(obj, args, plain=True)} {elapsed(time.time() - date(todate(tme)))}')
     else:
         for _fn, obj in result:
             nrs += 1
             tme = getattr(obj, "Date", "")
-            reply(event, f'{nrs} {fmt(obj, args, plain=True)} {elapsed(time.time() - extract_date(todate(tme)))}')
+            event.reply(f'{nrs} {fmt(obj, args, plain=True)} {elapsed(time.time() - date(todate(tme)))}')
     if not result:
-        reply(event, "no emails found.")
+        event.reply("no emails found.")
 
 
 def mbx(event):
     if not event.args:
-        reply(event, "mbx <path>")
+        event.reply("mbx <path>")
         return
     fnm = os.path.expanduser(event.args[0])
-    reply(event, "reading from %s" % fnm)
+    event.reply("reading from %s" % fnm)
     if os.path.isdir(fnm):
         thing = mailbox.Maildir(fnm, create=False)
     elif os.path.isfile(fnm):
@@ -112,4 +111,4 @@ def mbx(event):
         write(obj)
         nrs += 1
     if nrs:
-        reply(event, "ok %s" % nrs)
+        event.reply("ok %s" % nrs)

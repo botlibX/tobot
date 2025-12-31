@@ -1,12 +1,14 @@
 # This file is placed in the Public Domain.
 
 
-import datetime
+"where objects are stored."
+
+
 import os
 import pathlib
 
 
-from .objects import fqn
+from .utility import ident
 
 
 class Workdir:
@@ -14,69 +16,59 @@ class Workdir:
     wdr = ""
 
 
-def configure(name):
-    Workdir.wdr = os.path.expanduser(f"~/.{name}")
-    skel()
-
-
-def getid(obj):
-    return ident(obj)
-
-
 def getpath(obj):
-    return store(getid(obj))
+    "return path for object."
+    return storage(ident(obj))
 
 
-def ident(obj):
-    return os.path.join(fqn(obj), *str(datetime.datetime.now()).split())
-
-
-def long(name) -> str:
+def long(name):
+    "match full qualified name by substring."
     split = name.split(".")[-1].lower()
     res = name
-    for names in types():
+    for names in kinds():
         if split == names.split(".")[-1].lower():
             res = names
             break
     return res
 
 
-def moddir(modname=None):
+def moddir(modname: str = ""):
+    "return modules string."
     return os.path.join(Workdir.wdr, modname or "mods")
 
 
-def pidname(name):
+def pidname(name: str):
+    "return name of pidfile."
     return os.path.join(Workdir.wdr, f"{name}.pid")
 
 
 def skel():
-    path = store()
-    if os.path.exists(path):
-        return
+    "create directories."
+    path = storage()
     pth = pathlib.Path(path)
     pth.mkdir(parents=True, exist_ok=True)
     pth = pathlib.Path(moddir())
     pth.mkdir(parents=True, exist_ok=True)
 
 
-def store(fnm=""):
+def storage(fnm: str = ""):
+    "return path to store."
     return os.path.join(Workdir.wdr, "store", fnm)
 
 
-def types():
-    skel()
-    return os.listdir(store())
+def kinds():
+    "return stored types."
+    return os.listdir(storage())
 
 
 def __dir__():
     return (
         'Workdir',
         'getpath',
-        'ident',
         'long',
         'moddir',
         'pidname',
         'skel',
-        'store',
+        'storage',
         'types'
     )

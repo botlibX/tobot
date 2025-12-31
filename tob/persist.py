@@ -1,16 +1,20 @@
 # This file is placed in the Public Domain.
 
 
-import json
+"persistence through storage"
+
+
 import os
+import json
 import threading
-import time
 
 
-from .objects import Object, fqn, items, update
+from .methods import deleted, fqn, search
+from .objects import Object, keys, update
 from .serials import dump, load
+from .timings import fntime
 from .utility import cdir
-from .workdir import getpath, long, store
+from .workdir import getpath, long, storage
 
 
 lock = threading.RLock()
@@ -18,42 +22,31 @@ lock = threading.RLock()
 
 class Cache:
 
-    objs = Object()
-
-
-def add(path, obj):
-    setattr(Cache.objs, path, obj)
-
-
-def get(path):
-    return getattr(Cache.objs, path, None)
-
-
-def sync(path, obj):
-    setattr(Cache.objs, path, obj)
+    objects = {}
 
 
 def attrs(kind):
+    "show attributes for kind of objects."
     objs = list(find(kind))
     if objs:
-        return keys(objs[0][1])
+        return list(keys(objs[0][1]))
     return []
 
 
-def deleted(obj):
-    return "__deleted__" in dir(obj) and obj.__deleted__
+def cache(path):
+    "return object from cache."
+    return Cache.objects.get(path, None)
 
 
-def find(kind=None, selector=None, removed=False, matching=False):
-    if selector is None:
-        selector = {}
+def find(kind, selector={}, removed=False, matching=False):
+    "locate objects by matching atributes."
     fullname = long(kind)
     for pth in fns(fullname):
-        obj = get(pth)
+        obj = cache(pth)
         if not obj:
             obj = Object()
             read(obj, pth)
-            add(pth, obj)
+            put(pth, obj)
         if not removed and deleted(obj):
             continue
         if selector and not search(obj, selector, matching):
@@ -61,37 +54,20 @@ def find(kind=None, selector=None, removed=False, matching=False):
         yield pth, obj
 
 
-def fns(kind=None):
-    if kind is not None:
-        kind = kind.lower()
-    path = store()
+def fns(kind):
+    "return file names by kind of object."
+    path = storage(kind)
     for rootdir, dirs, _files in os.walk(path, topdown=True):
         for dname in dirs:
             if dname.count("-") != 2:
                 continue
             ddd = os.path.join(rootdir, dname)
-            if kind and kind not in ddd.lower():
-                continue
             for fll in os.listdir(ddd):
                 yield os.path.join(ddd, fll)
 
 
-def fntime(daystr):
-    datestr = " ".join(daystr.split(os.sep)[-2:])
-    datestr = datestr.replace("_", " ")
-    if "." in datestr:
-        datestr, rest = datestr.rsplit(".", 1)
-    else:
-        rest = ""
-    timed = time.mktime(time.strptime(datestr, "%Y-%m-%d %H:%M:%S"))
-    if rest:
-        timed += float("." + rest)
-    return float(timed)
-
-
-def last(obj, selector=None):
-    if selector is None:
-        selector = {}
+def last(obj, selector={}):
+    "return last saved version."
     result = sorted(
                     find(fqn(obj), selector),
                     key=lambda x: fntime(x[0])
@@ -104,7 +80,13 @@ def last(obj, selector=None):
     return res
 
 
+def put(path, obj):
+    "put object into cache."
+    Cache.objects[path] = obj
+
+
 def read(obj, path):
+    "read object from path."
     with lock:
         with open(path, "r", encoding="utf-8") as fpt:
             try:
@@ -114,25 +96,18 @@ def read(obj, path):
                 raise ex
 
 
-def search(obj, selector, matching=False):
-    res = False
-    for key, value in items(selector):
-        val = getattr(obj, key, None)
-        if not val:
-            continue
-        if matching and value == val:
-            res = True
-        elif str(value).lower() in str(val).lower():
-            res = True
-        else:
-            res = False
-            break
-    return res
+def sync(path, obj):
+    "update cached object."
+    try:
+        update(Cache.objects[path], obj)
+    except KeyError:
+        put(path, obj)
 
 
-def write(obj, path=None):
+def write(obj, path=""):
+    "write object to disk."
     with lock:
-        if path is None:
+        if path == "":
             path = getpath(obj)
         cdir(path)
         with open(path, "w", encoding="utf-8") as fpt:
@@ -143,23 +118,14 @@ def write(obj, path=None):
 
 def __dir__():
     return (
-    )
-
-
-
-def __dir__():
-    return (
         'Cache',
-        'add',
-        'get',
-        'sync',
         'attrs',
-        'deleted',
+        'cache',
         'find',
         'fns',
-        'fntime',
         'last',
+        'put',
         'read',
-        'search',
+        'sync',
         'write'
     )

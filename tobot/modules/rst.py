@@ -10,25 +10,21 @@ import time
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 
-from tob.objects import Object
-from tob.threads import launch
-from tob.workdir import store, types
+from tob.defines import Config, Object
+from tob.defines import launch, storage, kinds
 
 
-DEBUG = False
-
-
-def init(cfg):
+def init():
     try:
-        rest = REST((Config.hostname, int(Config.port)), RESTHandler)
+        rest = REST((Cfg.hostname, int(Cfg.port)), RESTHandler)
         rest.start()
-        logging.warning("http://%s:%s", Config.hostname, Config.port)
+        logging.warning("http://%s:%s", Cfg.hostname, Cfg.port)
         return rest
     except OSError as ex:
         logging.error(str(ex))
 
 
-class Config:
+class Cfg:
 
     hostname = "localhost"
     port     = 10102
@@ -83,31 +79,31 @@ class RESTHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
-        if DEBUG:
+        if Config.debug:
             return
         if "favicon" in self.path:
             return
         if self.path == "/":
             self.write_header("text/html")
             txt = ""
-            for fnm in types():
-                txt += f'<a href="http://{Config.hostname}:{Config.port}/{fnm}">{fnm}</a><br>\n'
+            for fnm in kinds():
+                txt += f'<a href="http://{Cfg.hostname}:{Cfg.port}/{fnm}">{fnm}</a><br>\n'
             self.send(html(txt.strip()))
             return
-        fnm = store() + self.path
+        fnm = storage() + self.path
         fnm = os.path.abspath(fnm)
         if os.path.isdir(fnm):
             self.write_header("text/html")
             txt = ""
             for fnn in os.listdir(fnm):
                 filename = self.path  + os.sep + fnn
-                txt += f'<a href="http://{Config.hostname}:{Config.port}/{filename}">{filename}</a><br>\n'
+                txt += f'<a href="http://{Cfg.hostname}:{Cfg.port}/{filename}">{filename}</a><br>\n'
             self.send(txt.strip())
             return
         try:
             with open(fnm, "r", encoding="utf-8") as file:
                 txt = file.read()
-                file.ctobe()
+                file.close()
             self.write_header("text/html")
             self.send(html(txt))
         except (TypeError, FileNotFoundError, IsADirectoryError) as ex:

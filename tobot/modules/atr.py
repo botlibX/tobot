@@ -4,21 +4,19 @@
 "fields"
 
 
-from tob.message import reply
-from tob.persist import attrs
-from tob.workdir import types
+from tob.defines import attrs, kinds
 
 
 def atr(event):
     if not event.rest:
-        res = sorted([x.split('.')[-1].lower() for x in types()])
+        res = sorted({x.split('.')[-1].lower() for x in kinds()})
         if res:
-            reply(event, ",".join(res))
+            event.reply(",".join(res))
         else:
-            reply(event, "no types")
+            event.reply("no types")
         return
-    items = attrs(event.args[0])
-    if not items:
-        reply(event, "no fields")
+    itms = attrs(event.args[0])
+    if not itms:
+        event.reply("no fields")
     else:
-        reply(event, ",".join(items))
+        event.reply(",".join(itms))

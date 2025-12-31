@@ -1,6 +1,9 @@
 # This file is placed in the Public Domain.
 
 
+"a clean namespace"
+
+
 import types
 
 
@@ -25,6 +28,7 @@ class Object:
 
 
 def construct(obj, *args, **kwargs):
+    "object contructor."
     if args:
         val = args[0]
         if isinstance(val, zip):
@@ -37,28 +41,39 @@ def construct(obj, *args, **kwargs):
         update(obj, kwargs)
 
 
-def fqn(obj):
-    kin = str(type(obj)).split()[-1][1:-2]
-    if kin == "type":
-        kin = f"{obj.__module__}.{obj.__name__}"
-    return kin
+def asdict(obj):
+    "return object as dictionary."
+    res = {}
+    for key in dir(obj):
+        if key.startswith("_"):
+            continue
+        res[key] = getattr(obj, key)
+    return res
 
 
 def items(obj):
+    "return object's key,valye pairs."
     if isinstance(obj, dict):
         return obj.items()
     if isinstance(obj, types.MappingProxyType):
         return obj.items()
-    return obj.__dict__.items()
+    res = []
+    for key in dir(obj):
+        if key.startswith("_"):
+            continue
+        res.append((key, getattr(obj, key)))
+    return res
 
 
 def keys(obj):
+    "return object keys."
     if isinstance(obj, dict):
         return obj.keys()
     return obj.__dict__.keys()
-
+    
 
 def update(obj, data, empty=True):
+    "update object,"
     if isinstance(obj, type):
         for k, v in items(data):
             if isinstance(getattr(obj, k, None), types.MethodType):
@@ -73,18 +88,30 @@ def update(obj, data, empty=True):
                 continue
             setattr(obj, key, value)
 
-
 def values(obj):
+    "return object's values/"
     if isinstance(obj, dict):
         return obj.values()
-    return obj.__dict__.values()
+    res = []
+    for key in dir(obj):
+        if key.startswith("_"):
+            continue
+        res.append(getattr(obj, key))
+    return res
+
+
+class Default(Object):
+
+    def __getattr__(self, key):
+        return self.__dict__.get(key, "")
 
 
 def __dir__():
     return (
+        'Default',
         'Object',
+        'asdict',
         'construct',
-        'fqn',
         'items',
         'keys',
         'update',

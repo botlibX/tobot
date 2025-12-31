@@ -1,10 +1,19 @@
 # This file is placed in the Public Domain.
 
 
-from .objects import fqn, items
+"functions with an object as the first argument"
 
 
-def edit(obj, setter, skip=True):
+from .objects import Default, items
+
+
+def deleted(obj):
+    "check whether obj had deleted flag set."
+    return "__deleted__" in dir(obj) and obj.__deleted__
+
+
+def edit(obj, setter={}, skip=False):
+    "update object with dict."
     for key, val in items(setter):
         if skip and val == "":
             continue
@@ -26,11 +35,10 @@ def edit(obj, setter, skip=True):
             setattr(obj, key, val)
 
 
-def fmt(obj, args=None, skip=None, plain=False, empty=False):
-    if args is None:
-        args = obj.__dict__.keys()
-    if skip is None:
-        skip = []
+def fmt(obj, args=[], skip=[], plain=False, empty=False):
+    "format object info printable string."
+    if args == []:
+        args = list(obj.__dict__.keys())
     txt = ""
     for key in args:
         if key.startswith("__"):
@@ -50,39 +58,33 @@ def fmt(obj, args=None, skip=None, plain=False, empty=False):
             txt += f"{key}={value} "
         else:
             txt += f"{key}={fqn(value)}((value))"
+    if txt == "":
+        txt = "{}"
     return txt.strip()
 
 
-def name(obj, short=False):
-    typ = type(obj)
-    res = ""
-    if "__builtins__" in dir(typ):
-        res = obj.__name__
-    elif "__self__" in dir(obj):
-        res = f"{obj.__self__.__class__.__name__}.{obj.__name__}"
-    elif "__class__" in dir(obj) and "__name__" in dir(obj):
-        res = f"{obj.__class__.__name__}.{obj.__name__}"
-    elif "__class__" in dir(obj):
-        res =  f"{obj.__class__.__module__}.{obj.__class__.__name__}"
-    elif "__name__" in dir(obj):
-        res = f"{obj.__class__.__name__}.{obj.__name__}"
-    if short:
-        res = res.split(".")[-1]
-    return res
+def fqn(obj):
+    "full qualified name."
+    kin = str(type(obj)).split()[-1][1:-2]
+    if kin == "type":
+        tpe = type(obj)
+        kin = f"{tpe.__module__}.{tpe.__name__}"
+    return kin
 
 
 def parse(obj, text):
+    "parse text for command."
     data = {
         "args": [],
         "cmd": "",
-        "gets": {},
+        "gets": Default(),
         "index": None,
         "init": "",
         "opts": "",
         "otxt": text,
         "rest": "",
-        "silent": {},
-        "sets": {},
+        "silent": Default(),
+        "sets": Default(),
         "text": text
     }
     for k, v in data.items():
@@ -98,16 +100,16 @@ def parse(obj, text):
             continue
         if "-=" in spli:
             key, value = spli.split("-=", maxsplit=1)
-            obj.silent[key] = value
-            obj.gets[key] = value
+            setattr(obj.silent, key, value)
+            setattr(obj.gets, key. value)
             continue
         if "==" in spli:
             key, value = spli.split("==", maxsplit=1)
-            obj.gets[key] = value
+            setattr(obj.gets, key, value)
             continue
         if "=" in spli:
             key, value = spli.split("=", maxsplit=1)
-            obj.sets[key] = value
+            setattr(obj.sets, key, value)
             continue
         nr += 1
         if nr == 0:
@@ -123,10 +125,30 @@ def parse(obj, text):
         obj.text = obj.cmd or ""
 
 
+def search(obj, selector={}, matching=False):
+    "check whether object matches search criteria."
+    res = False
+    for key, value in items(selector):
+        val = getattr(obj, key, None)
+        if not val:
+            res = False
+            break
+        if matching and value != val:
+            res = False
+            break
+        if str(value).lower() not in str(val).lower():
+            res = False
+            break
+        res = True
+    return res
+
+
 def __dir__():
     return (
+        'deleted',
         'edit',
         'fmt',
-        'name',
-        'parse'
+        'fqn',
+        'parse',
+        'search'
     )
