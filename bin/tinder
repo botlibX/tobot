@@ -13,31 +13,45 @@ import time
 sys.path.insert(0, os.getcwd())
 
 
+from tob.caching import persist
+from tob.command import command
+from tob.message import Message
+from tob.methods import fmt, parse
+from tob.handler import Client
+from tob.objects import Config
+from tob.package import adddir, scanner
+from tob.threads import launch
+from tob.timings import elapsed
+from tob.utility import wrapped
 
-from tob.defines import Config, Message, Output, Workdir
-from tob.defines import command, elapsed, fmt, launch, parse, scanner, skel 
+
+from tobot import modules as MODS
+#import mods as MODS
+
+Cfg = Config()
 
 
-import mods as MODS
-
-
-Config.debug = True
-Config.name = "tob"
-Config.version = 110
-Workdir.wdr = ".test"
+Cfg.debug = True
+Cfg.level = "info"
+Cfg.name = "nixt"
+Cfg.version = 10
+Cfg.wdr = ".test"
 
 
 events = queue.Queue()
 
 
-class CLI(Output):
+"clients"
+
+
+class CLI(Client):
 
     def __init__(self):
-        Output.__init__(self)
+        Client.__init__(self)
         self.register("command", command)
 
     def raw(self, txt):
-        if "v" in Config.opts:
+        if "v" in Cfg.opts:
             print(txt)
 
 
@@ -70,9 +84,12 @@ class Pool:
             Pool.nrlast += 1
 
 
+"utilities"
+
+
 def banner(name, version):
     tme = time.ctime(time.time()).replace("  ", " ")
-    print(f"{name.upper()} {version} since {tme} ({Config.level})")
+    print(f"{name.upper()} {version} since {tme} ({Cfg.level})")
     sys.stdout.flush()
 
 
@@ -107,24 +124,97 @@ def payload(todo):
             events.put(evt)
 
 
+"runtime"
+
+
+def wrap(func):
+    "restore console."
+    import termios
+    old = None
+    try:
+        old = termios.tcgetattr(sys.stdin.fileno())
+    except termios.error:
+        pass
+    try:
+        wrapped(func)
+    finally:
+        pass
+    if old:
+        termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, old)
+
+
+def main():
+    if "p" not in Cfg.opts and os.path.exists(Cfg.wdr):
+        shutil.rmtree(Cfg.wdr)
+    parse(Cfg, " ".join(sys.argv[1:]))
+    persist(Cfg.wdr)
+    adddir("modules", MODS.__path__[0])
+    if os.path.exists("mods"):
+        adddir('mods', 'mods')
+    for mod in scanner():
+        mod.DEBUG = True
+    if "v" in Cfg.opts:
+        banner(Cfg.name, Cfg.version)
+    if "z" in Cfg.opts:
+        Pool.init(CLI, os.cpu_count())
+    else:
+        Pool.init(CLI, 1)
+    starttime = time.time()
+    nrs = Cfg.index or 1
+    for _x in range(nrs):
+        payload(pre)
+    for _x in range(nrs):
+        payload(examples)
+    for _x in range(nrs):
+        payload(post)
+    launch(consume)
+    nrevents = events.qsize()
+    try:
+        events.join()
+    except (KeyboardInterrupt, EOFError):
+        pass
+    endtime = time.time()
+    lap = elapsed(endtime-starttime)
+    percall = (endtime-starttime)/nrevents
+    nrs = events.qsize()
+    if "v" in Cfg.opts:
+        print(f"{fmt(Cfg)}")
+        print(f"{nrs} events left.")
+        print(f"total: {lap} nrs: {nrevents} call: %.6fs" % percall)
+
+
+"date"
+
+
 examples = {
+    "atr": [""],
     "cmd": [""],
     "dis": [""],
     "dne": ["", "bla"],
     "dpl": ["hnrss title,url", ""],
-    "flt": [""],
+    "eml": ["", "root@localhost"],
+    "flt": ["", "0"],
     "fnd": ["", "log", "rss", "config", "todo"],
-    "man": [""],
+    "lou": [""],
+    "man": ["", "test"],
+    "mbx": [""],
     "mod": [""],
     "mre": [""],
     "nme": ["", "hnrss hackernews"],
     "now": [""],
+    "pth": [""],
     "pwd": ["", "bla mekker"],
     "req": [""],
     "res": ["", "hnrss"],
+    "sil": [""],
+    "slg": [""],
     "srv": [""],
+    "syn": [""],
     "thr": [""],
-    "upt": [""]
+    "tmr": ["", "22:00 test"],
+    "upt": [""],
+    "ver": [""],
+    "wsd": [""]
 }
 
 pre = {
@@ -132,7 +222,7 @@ pre = {
     "imp": ["", "testing/feeds.opml"],
     "log": ["", "log add"],
     "rss": ["", "http://hnrss.org/newest"],
-    "tdo": ["", "todo add"]
+    "tdo": ["", "test"]
 }
 
 post = {
@@ -143,50 +233,8 @@ post = {
 }
 
 
-
-def main():
-    if os.path.exists(Workdir.wdr):
-        shutil.rmtree(Workdir.wdr)
-    skel()
-    parse(Config, " ".join(sys.argv[1:]))
-    scanner(MODS)
-    if "v" in Config.opts:
-        banner(Config.name, Config.version)
-    if "z" in Config.opts:
-        Pool.init(CLI, os.cpu_count())
-    else:
-        Pool.init(CLI, 1)
-    starttime = time.time()
-    thrs = []
-    nrs = Config.index or 1
-    for _x in range(nrs):
-        thrs.append(launch(payload, pre))
-    for thr in thrs:
-        thr.join()
-    for _x in range(nrs):
-        thrs.append(launch(payload, examples))
-    for thr in thrs:
-        thr.join()
-    for _x in range(nrs):
-        thrs.append(launch(payload, post))
-    for thr in thrs:
-        thr.join()
-    launch(consume)
-    nrevents = events.qsize()
-    try:
-        events.join()
-    except (KeyboardInterrupt, EOFError):
-        os._exit(0)
-    endtime = time.time()
-    lap = elapsed(endtime-starttime)
-    percall = (endtime-starttime)/nrevents
-    nrs = events.qsize()
-    if "v" in Config.opts:
-        print(f"{fmt(Config)}")
-        print(f"{nrs} events left.")
-        print(f"total: {lap} nrs: {nrevents} call: %.6fs" % percall)
-    os._exit(0)
+"trampoline"
 
 
 if __name__ == "__main__":
-    main()
+    wrap(main)

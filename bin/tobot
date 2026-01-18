@@ -2,103 +2,120 @@
 # This file is placed in the Public Domain.
 
 
-"runtime"
+"main program"
 
 
-import importlib.util
-import inspect
 import os
 import pathlib
-import time
 import sys
+import time
 
 
 sys.path.insert(0, os.getcwd())
 
 
-from tob.defines import SYSTEMD, CLI
-from tob.defines import Commands, Config, Default, Message, Workdir
-from tob.defines import command, enable, parse, launch, level, scan, spl
-from tob.defines import moddir, pidname, package, skel, where, wrapped
+from tob.caching import persist
+from tob.command import Cfg, Commands, addcmd, command
+from tob.handler import Console
+from tob.message import Message
+from tob.methods import parse
+from tob.objects import Config
+from tob.package import adddir, addpkg, modules, scanner
+from tob.utility import forever, level, where, wrapped
 
 
-import tobot.modules as MODS
+from tobot import modules as MODS
 
 
-"config"
+"defines"
 
 
-Config.debug = False
-Config.gets = Default()
-Config.ignore = "man,mbx,rst,udp,web"
-Config.init = ""
-Config.level = "info"
-Config.name = "tobot"
-Config.opts = ""
-Config.path = package(MODS)
-Config.sets = Default()
-Config.txt = " ".join(sys.argv[1:])
-Config.version = 111
+TXT = " ".join(sys.argv[1:])
+
+
+Cfg.debug = False
+Cfg.init = ""
+Cfg.level = "info"
+Cfg.name = "tobot"
+Cfg.version = 10
+Cfg.wdr = os.path.expanduser(f"~/.{Cfg.name}")
 
 
 "clients"
 
 
-class Line(CLI):
+class Line(Console):
+
+    def __init__(self):
+        super().__init__()
+        self.register("command", command)
 
     def raw(self, text):
         "write to console."
         print(text.encode('utf-8', 'replace').decode("utf-8"))
 
 
-class Console(Line):
+class Term(Line):
+
 
     def callback(self, event):
         "wait for callback result."
         if not event.text:
+            event.ready()
             return
         super().callback(event)
         event.wait()
 
     def poll(self):
-        "poll for inpput."
+        "poll for an event."
         evt = Message()
         evt.text = input("> ")
         evt.kind = "command"
         return evt
 
 
-"runtime"
+"utility"
 
 
 def banner():
-    "in the beginning."
+    "hello."
     tme = time.ctime(time.time()).replace("  ", " ")
-    print("%s %s %s since %s (%s)" % (
-        Config.name.upper(),
-        Config.version,
-        Config.opts.strip().upper(),
+    print("%s %s since %s %s in %s" % (
+        Cfg.name.upper(),
+        Cfg.version,
         tme,
-        Config.level.upper()
+        Cfg.level.upper(),
+        Cfg.wdr
     ))
     sys.stdout.flush()
 
 
-def boot(txt):
-    "set important variables like workdir and module paths."
-    Workdir.wdr = Workdir.wdr or os.path.expanduser(f"~/.{Config.name}")
-    skel()
-    parse(Config, txt)
-    configure()
-    if "ignore" in Config.sets:
-        Config.ignore = Config.sets.ignore
-    level(Config.sets.level or Config.level or "info")
-
+def boot(inits=""):
+    "in the beginning."
+    parse(Cfg, TXT)
+    Cfg.init = Cfg.sets.init or Cfg.init or ""
+    Cfg.level = Cfg.sets.level or Cfg.level or "info"
+    Cfg.wdr = Cfg.sets.wdr or Cfg.wdr or ""
+    level(Cfg.level)
+    addpkg(MODS)
+    if "m" in Cfg.opts and os.path.exists("mods"):
+        adddir("mods", "mods")
+    if "v" in Cfg.opts:
+        banner()
+    if 'p' not in Cfg.opts:
+        persist(Cfg.wdr)
+    if 'a' in Cfg.opts:
+        mds = modules()
+    else:
+        mds = inits or Cfg.init
+    for mod in scanner(inits=mds, wait="w" in Cfg.opts):
+        mod.DEBUG = Cfg.debug
+        mod.NAME = Cfg.name
+            
 
 def check(text):
     "check for options."
-    args = sys.argv[1:]
-    for arg in args:
+    for arg in TXT.split():
         if not arg.startswith("-"):
             continue
         for char in text:
@@ -107,6 +124,18 @@ def check(text):
         return False
 
 
+def docmd(text):
+    "parse text for command and run it."
+    cli = Line()
+    for txt in text.split(" ! "):
+        evt = Message()
+        evt.orig = repr(cli)
+        evt.text = txt
+        evt.type = "command"
+        command(evt)
+        evt.wait()
+
+ 
 def daemon(verbose=False, nochdir=False):
     "run in the background."
     pid = os.fork()
@@ -116,44 +145,15 @@ def daemon(verbose=False, nochdir=False):
     pid2 = os.fork()
     if pid2 != 0:
         os._exit(0)
-    if not verbose:
-        with open('/dev/null', 'r', encoding="utf-8") as sis:
-            os.dup2(sis.fileno(), sys.stdin.fileno())
-        with open('/dev/null', 'a+', encoding="utf-8") as sos:
-            os.dup2(sos.fileno(), sys.stdout.fileno())
-        with open('/dev/null', 'a+', encoding="utf-8") as ses:
-            os.dup2(ses.fileno(), sys.stderr.fileno())
-    if not nochdir:
-        os.umask(0)
-        os.chdir("/")
+    with open('/dev/null', 'r', encoding="utf-8") as sis:
+        os.dup2(sis.fileno(), sys.stdin.fileno())
+    with open('/dev/null', 'a+', encoding="utf-8") as sos:
+        os.dup2(sos.fileno(), sys.stdout.fileno())
+    with open('/dev/null', 'a+', encoding="utf-8") as ses:
+        os.dup2(ses.fileno(), sys.stderr.fileno())
+    os.umask(0)
+    os.chdir("/")
     os.nice(10)
-
-
-def forever():
-    "run forever until ctrl-c."
-    while True:
-        try:
-            time.sleep(0.1)
-        except (KeyboardInterrupt, EOFError):
-            break
-
-
-def init(names=None, wait=False):
-    "run init function of modules."
-    if names is None:
-        names = modules()
-    mods = []
-    for name in spl(names):
-        module = getmod(name)
-        if not module:
-            continue
-        if "init" in dir(module):
-            thr = launch(module.init)
-            mods.append((module, thr))
-    if wait:
-        for module, thr in mods:
-            thr.join()
-    return mods
 
 
 def pidfile(filename):
@@ -166,6 +166,11 @@ def pidfile(filename):
         fds.write(str(os.getpid()))
 
 
+def pidname(name: str):
+    "name of pidfile."
+    return os.path.join(Cfg.wdr, f"{name}.pid")
+
+
 def privileges():
     "drop privileges."
     import getpass
@@ -173,19 +178,6 @@ def privileges():
     pwnam2 = pwd.getpwnam(getpass.getuser())
     os.setgid(pwnam2.pw_gid)
     os.setuid(pwnam2.pw_uid)
-
-
-def scanner(names=None):
-    "scan named modules for commands."
-    if names is None:
-        names = modules()
-    mods = []
-    for name in spl(names):
-        module = getmod(name)
-        if not module:
-            continue
-        scan(module)
-    return mods
 
 
 def wrap(func):
@@ -204,93 +196,16 @@ def wrap(func):
         termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, old)
 
 
-"modules"
-
-
-class Mods:
-
-    dirs = {}
-    modules = {}
-
-
-def configure():
-    dirs(f"{Config.name}.modules", Config.path)
-
-
-def dirs(name: str, path):
-    "add module directory."
-    Mods.dirs[name] = path
-
-
-def importer(name, pth=""):
-    "import module by path."
-    if pth and os.path.exists(pth):
-        spec = importlib.util.spec_from_file_location(name, pth)
-    else:
-        spec = importlib.util.find_spec(name)
-    if not spec or not spec.loader:
-        return None
-    mod = importlib.util.module_from_spec(spec)
-    if not mod:
-        return None
-    Mods.modules[name] = mod
-    spec.loader.exec_module(mod)
-    return mod
-
-
-def getmod(name):
-    "import module by name." 
-    if name in spl(Config.ignore):
-        return None
-    if name in Mods.modules:
-        return Mods.modules[name]
-    mname = ""
-    pth = ""
-    for packname, path in Mods.dirs.items():
-        modpath = os.path.join(path, name + ".py")
-        if os.path.exists(modpath):
-            pth = modpath
-            mname = f"{packname}.{name}"
-            break
-    return importer(mname, pth)
-
-
-def mods(names):
-    "list of named modules."
-    return [
-        getmod(x) for x in sorted(spl(names))
-        if x not in spl(Config.ignore)
-        or x in spl(Config.sets.init)
-    ]
-
-
-def modules():
-    "comma seperated list of available modules."
-    mods = []
-    for name, path in Mods.dirs.items():
-        if name in spl(Config.ignore):
-            continue
-        if not os.path.exists(path):
-            continue
-        mods.extend([
-            x[:-3] for x in os.listdir(path)
-            if x.endswith(".py") and not x.startswith("__") and x not in spl(Config.ignore)
-        ])
-    return ",".join(sorted(mods))
-
-
 "scripts"
 
 
 def background():
     "background script."
-    daemon(check("v"), check("m"))
+    daemon()
     privileges()
-    boot(Config.txt)
-    pidfile(pidname(Config.name))
-    enable(cmd, mod, ver)
-    scanner(modules())
-    init(modules())
+    pidfile(pidname(Cfg.name))
+    addcmd(cmd, mod, ver)
+    boot(inits=Cfg.init or "irc,rss")
     forever()
 
 
@@ -298,19 +213,10 @@ def console():
     "console script."
     import readline
     readline.redisplay()
-    if check("0"):
-        Config.ignore = list()
-    boot(Config.txt)
-    if "v" in Config.opts:
-        banner()
-    scanner()
-    enable(cmd, mod, ver)
-    if "a" in Config.opts:
-        mds = modules()
-    else:
-        mds = Config.sets.init
-    init(mds, "w" in Config.opts)
-    csl = Console()
+    boot()
+    addcmd(cmd, mod, ver)
+    docmd(TXT)
+    csl = Term()
     csl.start()
     forever()
 
@@ -319,27 +225,18 @@ def control():
     "cli script."
     if len(sys.argv) == 1:
         return
-    boot(Config.txt)
-    scanner()
-    enable(cmd, mod, srv, ver)
-    cli = Line()
-    evt = Message()
-    evt.orig = repr(cli)
-    evt.text = " ".join(sys.argv[1:])
-    evt.type = "command"
-    command(evt)
-    evt.wait()
+    boot()
+    addcmd(cmd, mod, ver)
+    docmd(TXT)
 
 
 def service():
     "service script."
     privileges()
-    boot(Config.txt)
     banner()
-    pidfile(pidname(Config.name))
-    enable(cmd, mod, ver)
-    scanner()
-    init(modules())
+    pidfile(pidname(Cfg.name))
+    addcmd(cmd, mod, ver)
+    boot(inits=Cfg.init or "irc,rss")
     forever()
 
 
@@ -353,32 +250,23 @@ def cmd(event):
 
 def mod(event):
     "list available commands."
-    event.reply(modules())
-
-
-def srv(event):
-    "generate systemd service file."
-    import getpass
-    name = getpass.getuser()
-    event.reply(SYSTEMD % (Config.name.upper(), name, name, name, Config.name))
+    event.reply(",".join([x[:-3] for x in os.listdir(MODS.__path__[0]) if not x.startswith("__")]))
 
 
 def ver(event):
     "show version."
-    event.reply(f"{Config.name.upper()} {Config.version} {Config.opts}")
+    event.reply(f"{Cfg.name.upper()} {Cfg.version}")
 
 
 "runtime"
 
 
 def main():
-    "runtime."
-    if check('z'):
-        Config.debug = True
-    if check("c"):
-        wrap(console)
-    elif check("d"):
+    "main"
+    if check("d"):
         background()
+    elif check("c"):
+        wrap(console)
     elif check("s"):
         wrapped(service)
     else:
