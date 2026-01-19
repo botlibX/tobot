@@ -14,7 +14,7 @@ sys.path.insert(0, os.getcwd())
 
 
 from tob.caching import persist
-from tob.command import command
+from tob.command import Cfg, command
 from tob.message import Message
 from tob.methods import fmt, parse
 from tob.handler import Client
@@ -28,12 +28,11 @@ from tob.utility import wrapped
 from tobot import modules as MODS
 #import mods as MODS
 
-Cfg = Config()
-
 
 Cfg.debug = True
 Cfg.level = "info"
-Cfg.name = "nixt"
+Cfg.name = "tobot"
+Cfg.opts = ""
 Cfg.version = 10
 Cfg.wdr = ".test"
 

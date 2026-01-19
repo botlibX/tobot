@@ -16,6 +16,7 @@ from .utility import spl
 class Mods:
 
     dirs = {}
+    modules = {}
 
 
 def adddir(name, path):
@@ -37,8 +38,43 @@ def importer(name, pth=""):
     mod = importlib.util.module_from_spec(spec)
     if not mod:
         return None
+    Mods.modules[name] = mod
     spec.loader.exec_module(mod)
     return mod
+
+
+def inits(inits="", ignore="", wait=False):
+    "scan named modules for commands."
+    thrs = []
+    for name, mod in mods(ignore):
+        if inits and name not in spl(inits):
+            continue
+        if "init" in dir(mod):
+            thrs.append((name, launch(mod.init)))
+    if wait:
+        for name, thr in thrs:
+            thr.join()
+        
+
+def mods(ignore=""):
+    "loop over modules."
+    for pkgname, path in Mods.dirs.items():
+        if not os.path.exists(path):
+            continue
+        for fnm in os.listdir(path):
+            if fnm.startswith("__"):
+                continue
+            if not fnm.endswith(".py"):
+                continue
+            name = fnm[:-3]
+            if ignore and name in spl(ignore):
+                continue
+            modname = f"{pkgname}.{name}"
+            mod = Mods.modules.get(modname, None)
+            if not mod:
+                mod = importer(modname, os.path.join(path, fnm))
+            if mod:
+                yield name, mod
 
 
 def modules(ignore=""):
@@ -54,34 +90,13 @@ def modules(ignore=""):
     return ",".join(sorted(mods))
 
 
-def scanner(inits="", wait=False):
+def scanner(ignore=""):
     "scan named modules for commands."
-    mods = []
-    thrs = []
-    for pkgname, path in Mods.dirs.items():
-        if not os.path.exists(path):
-            continue
-        for fnm in os.listdir(path):
-            if fnm.startswith("__"):
-                continue
-            if not fnm.endswith(".py"):
-                continue
-            name = fnm[:-3]
-            modname = f"{pkgname}.{name}"
-            mod = importer(modname, os.path.join(path, fnm))
-            if not mod:
-                continue
-            scancmd(mod)
-            mods.append(mod)
-            if name not in spl(inits):
-                continue
-            if "init" not in dir(mod):
-                continue
-            thrs.append(launch(mod.init))
-    if wait:
-        for thr in thrs:
-            thr.join()
-    return mods
+    res = []
+    for name, mod in mods(ignore):
+        scancmd(mod)
+        res.append((name, mod))
+    return res
 
 
 def __dir__():
@@ -90,6 +105,7 @@ def __dir__():
         'adddir',
         'addpkg',
         'importer',
+        'inits',
         'modules',
         'scanner'
     )

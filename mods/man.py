@@ -237,6 +237,6 @@ def man(event):
         descr,
         *(Cfg.name,) * 4,
         *(Cfg.name.upper(),) * 4,
-        *(Cfg.name,) * 32,
+        *(Cfg.name,) * 33,
         Cfg.name.upper()
         ))

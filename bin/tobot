@@ -5,6 +5,7 @@
 "main program"
 
 
+import logging
 import os
 import pathlib
 import sys
@@ -14,13 +15,14 @@ import time
 sys.path.insert(0, os.getcwd())
 
 
-from tob.caching import persist
+from tob.caching import pidfile, pidname, setwd, workdir
 from tob.command import Cfg, Commands, addcmd, command
 from tob.handler import Console
 from tob.message import Message
 from tob.methods import parse
 from tob.objects import Config
-from tob.package import adddir, addpkg, modules, scanner
+from tob.package import adddir, addpkg, inits, modules, scanner
+from tob.threads import launch
 from tob.utility import forever, level, where, wrapped
 
 
@@ -34,6 +36,8 @@ TXT = " ".join(sys.argv[1:])
 
 
 Cfg.debug = False
+Cfg.default = "irc,mdl,rss,wsd"
+Cfg.ignore = "rst,web,udp"
 Cfg.init = ""
 Cfg.level = "info"
 Cfg.name = "tobot"
@@ -80,12 +84,11 @@ class Term(Line):
 def banner():
     "hello."
     tme = time.ctime(time.time()).replace("  ", " ")
-    print("%s %s since %s %s in %s" % (
+    print("%s %s since %s (%s)" % (
         Cfg.name.upper(),
         Cfg.version,
         tme,
         Cfg.level.upper(),
-        Cfg.wdr
     ))
     sys.stdout.flush()
 
@@ -97,21 +100,16 @@ def boot(inits=""):
     Cfg.level = Cfg.sets.level or Cfg.level or "info"
     Cfg.wdr = Cfg.sets.wdr or Cfg.wdr or ""
     level(Cfg.level)
+    setwd(Cfg.wdr)
+    adddir("modules", os.path.join(workdir(), "mods"))
     addpkg(MODS)
     if "m" in Cfg.opts and os.path.exists("mods"):
         adddir("mods", "mods")
     if "v" in Cfg.opts:
         banner()
-    if 'p' not in Cfg.opts:
-        persist(Cfg.wdr)
     if 'a' in Cfg.opts:
-        mds = modules()
-    else:
-        mds = inits or Cfg.init
-    for mod in scanner(inits=mds, wait="w" in Cfg.opts):
-        mod.DEBUG = Cfg.debug
-        mod.NAME = Cfg.name
-            
+        Cfg.init = modules(Cfg.ignore)
+
 
 def check(text):
     "check for options."
@@ -156,21 +154,6 @@ def daemon(verbose=False, nochdir=False):
     os.nice(10)
 
 
-def pidfile(filename):
-    "write pidfile."
-    if os.path.exists(filename):
-        os.unlink(filename)
-    path2 = pathlib.Path(filename)
-    path2.parent.mkdir(parents=True, exist_ok=True)
-    with open(filename, "w", encoding="utf-8") as fds:
-        fds.write(str(os.getpid()))
-
-
-def pidname(name: str):
-    "name of pidfile."
-    return os.path.join(Cfg.wdr, f"{name}.pid")
-
-
 def privileges():
     "drop privileges."
     import getpass
@@ -189,9 +172,11 @@ def wrap(func):
     except termios.error:
         pass
     try:
-        wrapped(func)
-    finally:
+        func()
+    except (KeyboardInterrupt, EOFError):
         pass
+    except Exception as ex:
+        logging.exception(ex)
     if old:
         termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, old)
 
@@ -203,9 +188,11 @@ def background():
     "background script."
     daemon()
     privileges()
+    boot()
     pidfile(pidname(Cfg.name))
+    scanner(Cfg.ignore)
     addcmd(cmd, mod, ver)
-    boot(inits=Cfg.init or "irc,rss")
+    inits(Cfg.default, Cfg.ignore)
     forever()
 
 
@@ -214,10 +201,12 @@ def console():
     import readline
     readline.redisplay()
     boot()
+    scanner(Cfg.ignore)
     addcmd(cmd, mod, ver)
     docmd(TXT)
     csl = Term()
     csl.start()
+    inits(Cfg.init, Cfg.ignore, "w" in Cfg.opts)
     forever()
 
 
@@ -226,7 +215,8 @@ def control():
     if len(sys.argv) == 1:
         return
     boot()
-    addcmd(cmd, mod, ver)
+    scanner(Cfg.ignore)
+    addcmd(cmd, mod, srv, ver)
     docmd(TXT)
 
 
@@ -234,9 +224,11 @@ def service():
     "service script."
     privileges()
     banner()
+    boot()
     pidfile(pidname(Cfg.name))
+    scanner(Cfg.ignore)
     addcmd(cmd, mod, ver)
-    boot(inits=Cfg.init or "irc,rss")
+    inits(Cfg.default, Cfg.ignore)
     forever()
 
 
@@ -250,12 +242,36 @@ def cmd(event):
 
 def mod(event):
     "list available commands."
-    event.reply(",".join([x[:-3] for x in os.listdir(MODS.__path__[0]) if not x.startswith("__")]))
+    event.reply(modules(Cfg.ignore))
+
+
+def srv(event):
+    "generate systemd service file."
+    import getpass
+    name = getpass.getuser()
+    event.reply(SYSTEMD % (Cfg.name.upper(), name, name, name, Cfg.name))
 
 
 def ver(event):
     "show version."
     event.reply(f"{Cfg.name.upper()} {Cfg.version}")
+
+
+"data"
+
+
+SYSTEMD = """[Unit]
+Description=%s
+After=multi-user.target
+
+[Service]
+Type=simple
+User=%s
+Group=%s
+ExecStart=/home/%s/.local/bin/%s -s
+
+[Install]
+WantedBy=multi-user.target"""
 
 
 "runtime"
@@ -268,9 +284,9 @@ def main():
     elif check("c"):
         wrap(console)
     elif check("s"):
-        wrapped(service)
+        wrap(service)
     else:
-        wrapped(control)
+        wrap(control)
 
 
 if __name__ == "__main__":

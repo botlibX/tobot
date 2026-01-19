@@ -47,7 +47,7 @@ def syncpath(path, obj):
 "workdir"
 
 
-def persist(path):
+def setwd(path):
     "enable writing to disk."
     Cache.workdir = path
     skel()
@@ -56,6 +56,7 @@ def persist(path):
 def kinds():
     "show kind on objects in cache."
     return os.listdir(os.path.join(Cache.workdir, "store"))
+
 
 def long(name):
     "expand to fqn."
@@ -66,6 +67,21 @@ def long(name):
             res = names
             break
     return res
+
+
+def pidfile(filename):
+    "write pidfile."
+    if os.path.exists(filename):
+        os.unlink(filename)
+    path2 = pathlib.Path(filename)
+    path2.parent.mkdir(parents=True, exist_ok=True)
+    with open(filename, "w", encoding="utf-8") as fds:
+        fds.write(str(os.getpid()))
+
+
+def pidname(name):
+    "name of pidfile."
+    return os.path.join(Cache.workdir, f"{name}.pid")
 
 
 def skel():
@@ -196,7 +212,10 @@ def __dir__():
         'kinds',
         'last',
         'persist',
+        'pidfile',
+        'pidname',
         'read',
+        'setwd',
         'skel',
         'strip',
         'syncpath',
