@@ -251,7 +251,6 @@ def today():
     return str(datetime.datetime.today()).split()[0]
 
 
-
 "data"
 
 

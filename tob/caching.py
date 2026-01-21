@@ -20,6 +20,9 @@ from .utility import ident
 lock = threading.RLock()
 
 
+"cache"
+
+
 class Cache:
 
     paths = {}
@@ -42,6 +45,93 @@ def syncpath(path, obj):
         update(Cache.paths[path], obj)
     except KeyError:
         addpath(path, obj)
+
+
+"storage"
+
+
+def read(obj, path):
+    "read object from path."
+    with lock:
+        pth = os.path.join(Cache.workdir, "store", path)
+        with open(pth, "r", encoding="utf-8") as fpt:
+            try:
+                update(obj, load(fpt))
+            except json.decoder.JSONDecodeError as ex:
+                ex.add_note(path)
+                raise ex
+
+
+
+def write(obj, path=""):
+    "write object to disk."
+    with lock:
+        if path == "":
+            path = ident(obj)
+        pth = os.path.join(Cache.workdir, "store", path)
+        cdir(pth)
+        with open(pth, "w", encoding="utf-8") as fpt:
+            dump(obj, fpt, indent=4)
+        syncpath(path, obj)
+        return path
+
+
+"find"
+
+
+def attrs(kind):
+    "show attributes for kind of objects."
+    pth, obj = find(kind, nritems=1)
+    if obj:
+        return list(keys(obj))
+    return []
+
+
+def find(kind, selector={}, removed=False, matching=False, nritems=None):
+    "locate objects by matching atributes."
+    nrs = 0
+    res = []
+    for pth in fns(long(kind)):
+        obj = getpath(pth)
+        if not obj:
+            obj = Object()
+            read(obj, pth)
+            addpath(pth, obj)
+        if not removed and deleted(obj):
+            continue
+        if selector and not search(obj, selector, matching):
+            continue
+        if nritems and nrs >= nritems:
+            break
+        nrs += 1
+        res.append((pth, obj))
+    return res
+
+
+def fns(kind):
+    "file names by kind of object."
+    path = os.path.join(Cache.workdir, "store", kind)
+    for rootdir, dirs, _files in os.walk(path, topdown=True):
+        for dname in dirs:
+            if dname.count("-") != 2:
+                continue
+            ddd = os.path.join(rootdir, dname)
+            for fll in os.listdir(ddd):
+                yield strip(os.path.join(ddd, fll))
+
+
+def last(obj, selector={}):
+    "last saved version."
+    result = sorted(
+                    find(fqn(obj), selector),
+                    key=lambda x: fntime(x[0])
+                   )
+    res = ""
+    if result:
+        inp = result[-1]
+        update(obj, inp[-1])
+        res = inp[0]
+    return res
 
 
 "workdir"
@@ -116,91 +206,7 @@ def strip(path):
     return path.split('store')[-1][1:]
 
 
-"find"
-
-
-def attrs(kind):
-    "show attributes for kind of objects."
-    pth, obj = find(kind, nritems=1)
-    if obj:
-        return list(keys(obj))
-    return []
-
-
-def find(kind, selector={}, removed=False, matching=False, nritems=None):
-    "locate objects by matching atributes."
-    nrs = 0
-    res = []
-    for pth in fns(long(kind)):
-        obj = getpath(pth)
-        if not obj:
-            obj = Object()
-            read(obj, pth)
-            addpath(pth, obj)
-        if not removed and deleted(obj):
-            continue
-        if selector and not search(obj, selector, matching):
-            continue
-        if nritems and nrs >= nritems:
-            break
-        nrs += 1
-        res.append((pth, obj))
-    return res
-
-
-def fns(kind):
-    "file names by kind of object."
-    path = os.path.join(Cache.workdir, "store", kind)
-    for rootdir, dirs, _files in os.walk(path, topdown=True):
-        for dname in dirs:
-            if dname.count("-") != 2:
-                continue
-            ddd = os.path.join(rootdir, dname)
-            for fll in os.listdir(ddd):
-                yield strip(os.path.join(ddd, fll))
-
-
-def last(obj, selector={}):
-    "last saved version."
-    result = sorted(
-                    find(fqn(obj), selector),
-                    key=lambda x: fntime(x[0])
-                   )
-    res = ""
-    if result:
-        inp = result[-1]
-        update(obj, inp[-1])
-        res = inp[0]
-    return res
-
-
-"storage"
-
-
-def read(obj, path):
-    "read object from path."
-    with lock:
-        pth = os.path.join(Cache.workdir, "store", path)
-        with open(pth, "r", encoding="utf-8") as fpt:
-            try:
-                update(obj, load(fpt))
-            except json.decoder.JSONDecodeError as ex:
-                ex.add_note(path)
-                raise ex
-
-
-
-def write(obj, path=""):
-    "write object to disk."
-    with lock:
-        if path == "":
-            path = ident(obj)
-        pth = os.path.join(Cache.workdir, "store", path)
-        cdir(pth)
-        with open(pth, "w", encoding="utf-8") as fpt:
-            dump(obj, fpt, indent=4)
-        syncpath(path, obj)
-        return path
+"interface"
 
 
 def __dir__():
@@ -211,7 +217,6 @@ def __dir__():
         'getpath',
         'kinds',
         'last',
-        'persist',
         'pidfile',
         'pidname',
         'read',

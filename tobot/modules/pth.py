@@ -4,9 +4,6 @@
 import os
 
 
-from tob.utility import where
-
-
 d = os.path.dirname
 
 

@@ -15,6 +15,9 @@ import _thread
 lock = threading.RLock()
 
 
+"thread"
+
+
 class Thread(threading.Thread):
 
     def __init__(self, func, *args, daemon=True, **kwargs):
@@ -61,6 +64,9 @@ class Thread(threading.Thread):
             _thread.interrupt_main()
 
 
+"utilities"
+
+
 def launch(func, *args, **kwargs):
     "run function in a thread."
     with lock:
@@ -79,6 +85,9 @@ def name(obj):
     if inspect.isfunction(obj):
         return repr(obj).split()[1]
     return repr(obj)
+
+
+"interface"
 
 
 def __dir__():

@@ -7,6 +7,9 @@
 from .objects import Default, items
 
 
+"methods"
+
+
 def deleted(obj):
     "check whether obj had deleted flag set."
     return "__deleted__" in dir(obj) and obj.__deleted__
@@ -145,6 +148,9 @@ def typed(obj, key, val):
         setattr(obj, key, False)
     else:
         setattr(obj, key, val)
+
+
+"interface"
 
 
 def __dir__():

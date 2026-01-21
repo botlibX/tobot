@@ -14,6 +14,9 @@ from .brokers import addobj
 from .threads import launch
 
 
+"handler"
+
+
 class Handler:
 
     def __init__(self):
@@ -55,6 +58,9 @@ class Handler:
         self.queue.put(None)
 
 
+"client"
+
+
 class Client(Handler):
 
     def __init__(self):
@@ -81,6 +87,22 @@ class Client(Handler):
         "say called by display."
         self.say(channel, text)
 
+    def loop(self):
+        "input loop."
+        while True:
+            event = self.poll()
+            if not event or self.stopped.is_set():
+                break
+            event.orig = repr(self)
+            self.callback(event)
+
+    def poll(self):
+        "return event."
+        return self.iqueue.get()
+
+    def put(self, event):
+        self.iqueue.put(event)
+
     def raw(self, text):
         "raw output."
         raise NotImplementedError("raw")
@@ -88,6 +110,9 @@ class Client(Handler):
     def say(self, channel, text):
         "say text in channel."
         self.raw(text)
+
+
+"console"
 
 
 class Console(Client):
@@ -100,14 +125,17 @@ class Console(Client):
                 break
             event.orig = repr(self)
             self.callback(event)
-            #event.wait()
+            event.wait()
 
     def poll(self):
         "return event."
         return self.iqueue.get()
 
 
-class Output(Console):
+"buffered output"
+
+
+class Output(Client):
 
     def __init__(self):
         super().__init__()
@@ -140,6 +168,9 @@ class Output(Console):
         except Exception as ex:
             logging.exception(ex)
             _thread.interrupt_main()
+
+
+"interface"
 
 
 def __dir__():

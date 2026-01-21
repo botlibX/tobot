@@ -20,7 +20,7 @@ def getobj(origin):
 
 
 def getobjs(attr):
-    "object with a certain attribute."
+    "objects with a certain attribute."
     for obj in Broker.objects.values():
         if attr in dir(obj):
             yield obj
@@ -33,10 +33,14 @@ def likeobj(txt):
             yield orig
 
 
+"interface"
+
+
 def __dir__():
     return (
+        'Broker',
         'addobj',
         'getobj',
-        'objs',
+        'getobjs',
         'likeobj'
     )

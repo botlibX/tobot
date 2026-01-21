@@ -11,6 +11,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 
 
 from tob.caching import kinds, workdir
+from tob.command import Cfg
 from tob.objects import Object
 from tob.threads import launch
 

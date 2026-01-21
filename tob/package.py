@@ -13,18 +13,54 @@ from .threads import launch
 from .utility import spl
 
 
+"modules"
+
+
 class Mods:
 
     dirs = {}
     modules = {}
 
 
-def adddir(name, path):
+def initmods(name, path):
     Mods.dirs[name] = path
 
 
-def addpkg(pkg):
-    Mods.dirs[pkg.__name__] = pkg.__path__[0]
+def getmods(ignore=""):
+    "loop over modules."
+    for pkgname, path in Mods.dirs.items():
+        if not os.path.exists(path):
+            continue
+        for fnm in os.listdir(path):
+            if fnm.startswith("__"):
+                continue
+            if not fnm.endswith(".py"):
+                continue
+            name = fnm[:-3]
+            if ignore and name in spl(ignore):
+                continue
+            modname = f"{pkgname}.{name}"
+            mod =  Mods.modules.get(modname, None)
+            if not mod:
+                mod = importer(modname, os.path.join(path, fnm))
+            if mod:
+                yield name, mod
+
+
+def listmods(ignore=""):
+    "comma seperated list of available modules."
+    mods = []
+    for pkgname, path in Mods.dirs.items():
+        mods.extend([
+            x[:-3] for x in os.listdir(path)
+            if x.endswith(".py") and
+            not x.startswith("__") and
+            x[:-3] not in spl(ignore)
+        ])
+    return ",".join(sorted(mods))
+
+
+"utilities"
 
 
 def importer(name, pth=""):
@@ -43,11 +79,14 @@ def importer(name, pth=""):
     return mod
 
 
-def inits(inits="", ignore="", wait=False):
+"runtime"
+
+
+def inits(init, ignore="", wait=False):
     "scan named modules for commands."
     thrs = []
-    for name, mod in mods(ignore):
-        if inits and name not in spl(inits):
+    for name, mod in getmods(ignore):
+        if name not in spl(init):
             continue
         if "init" in dir(mod):
             thrs.append((name, launch(mod.init)))
@@ -56,56 +95,25 @@ def inits(inits="", ignore="", wait=False):
             thr.join()
         
 
-def mods(ignore=""):
-    "loop over modules."
-    for pkgname, path in Mods.dirs.items():
-        if not os.path.exists(path):
-            continue
-        for fnm in os.listdir(path):
-            if fnm.startswith("__"):
-                continue
-            if not fnm.endswith(".py"):
-                continue
-            name = fnm[:-3]
-            if ignore and name in spl(ignore):
-                continue
-            modname = f"{pkgname}.{name}"
-            mod = Mods.modules.get(modname, None)
-            if not mod:
-                mod = importer(modname, os.path.join(path, fnm))
-            if mod:
-                yield name, mod
-
-
-def modules(ignore=""):
-    "comma seperated list of available modules."
-    mods = []
-    for pkgname, path in Mods.dirs.items():
-        mods.extend([
-            x[:-3] for x in os.listdir(path)
-            if x.endswith(".py") and
-            not x.startswith("__") and
-            x[:-3] not in spl(ignore)
-        ])
-    return ",".join(sorted(mods))
-
-
 def scanner(ignore=""):
     "scan named modules for commands."
     res = []
-    for name, mod in mods(ignore):
+    for name, mod in getmods(ignore):
         scancmd(mod)
         res.append((name, mod))
     return res
 
 
+"interface"
+
+
 def __dir__():
     return (
         'Mods',
-        'adddir',
-        'addpkg',
+        'initmods',
+        'getmods',
         'importer',
         'inits',
-        'modules',
+        'listmods',
         'scanner'
     )

@@ -7,9 +7,15 @@
 import types
 
 
+"exception"
+
+
 class Reserved(Exception):
 
     pass
+
+
+"object"
 
 
 class Object:
@@ -59,6 +65,17 @@ def keys(obj):
     "object's keys."
     if isinstance(obj, dict):
         return obj.keys()
+    if isinstance(obj, types.MappingProxyType):
+        return obj.keys()
+    res = []
+    for key in dir(obj):
+        if key.startswith("_"):
+            continue
+        res.append(key)
+    return res
+
+    if isinstance(obj, dict):
+        return obj.keys()
     return obj.__dict__.keys()
     
 
@@ -93,20 +110,20 @@ def values(obj):
     return res
 
 
+"default"
+
+
 class Default(Object):
 
     def __getattr__(self, key):
         return self.__dict__.get(key, "")
 
 
-class Config(Default):
-
-    pass
+"interface"
 
 
 def __dir__():
     return (
-        'Config',
         'Default',
         'Object',
         'construct',

@@ -7,7 +7,6 @@
 
 import logging
 import os
-import pathlib
 import sys
 import time
 
@@ -20,13 +19,12 @@ from tob.command import Cfg, Commands, addcmd, command
 from tob.handler import Console
 from tob.message import Message
 from tob.methods import parse
-from tob.objects import Config
-from tob.package import adddir, addpkg, inits, modules, scanner
-from tob.threads import launch
-from tob.utility import forever, level, where, wrapped
+from tob.package import initmods, inits, listmods, scanner
+from tob.utility import forever, level
 
 
 from tobot import modules as MODS
+#import mods as MODS
 
 
 "defines"
@@ -40,7 +38,7 @@ Cfg.default = "irc,mdl,rss,wsd"
 Cfg.ignore = "rst,web,udp"
 Cfg.init = ""
 Cfg.level = "info"
-Cfg.name = "tobot"
+Cfg.name = "tob"
 Cfg.version = 10
 Cfg.wdr = os.path.expanduser(f"~/.{Cfg.name}")
 
@@ -78,6 +76,82 @@ class Term(Line):
         return evt
 
 
+"scripts"
+
+
+def background():
+    "background script."
+    daemon()
+    privileges()
+    boot()
+    pidfile(pidname(Cfg.name))
+    scanner(Cfg.ignore)
+    addcmd(cmd, mod, ver)
+    inits(Cfg.default, Cfg.ignore)
+    forever()
+
+
+def console():
+    "console script."
+    import readline
+    readline.redisplay()
+    boot()
+    scanner(Cfg.ignore)
+    addcmd(cmd, mod, ver)
+    docmd(TXT)
+    inits(Cfg.init, Cfg.ignore, "w" in Cfg.opts)
+    csl = Term()
+    csl.start()
+    forever()
+
+
+def control():
+    "cli script."
+    if len(sys.argv) == 1:
+        return
+    boot()
+    scanner(Cfg.ignore)
+    addcmd(cmd, mod, srv, ver)
+    docmd(TXT)
+
+
+def service():
+    "service script."
+    privileges()
+    banner()
+    boot()
+    pidfile(pidname(Cfg.name))
+    scanner(Cfg.ignore)
+    addcmd(cmd, mod, ver)
+    inits(Cfg.default, Cfg.ignore)
+    forever()
+
+
+"commands"
+
+
+def cmd(event):
+    "list available commands."
+    event.reply(",".join(sorted(Commands.names or Commands.cmds)))
+
+
+def mod(event):
+    "list available commands."
+    event.reply(listmods(Cfg.ignore))
+
+
+def srv(event):
+    "generate systemd service file."
+    import getpass
+    name = getpass.getuser()
+    event.reply(SYSTEMD % (Cfg.name.upper(), name, name, name, Cfg.name))
+
+
+def ver(event):
+    "show version."
+    event.reply(f"{Cfg.name.upper()} {Cfg.version}")
+
+
 "utility"
 
 
@@ -101,14 +175,14 @@ def boot(inits=""):
     Cfg.wdr = Cfg.sets.wdr or Cfg.wdr or ""
     level(Cfg.level)
     setwd(Cfg.wdr)
-    adddir("modules", os.path.join(workdir(), "mods"))
-    addpkg(MODS)
+    initmods("modules", os.path.join(workdir(), "mods"))
+    initmods(MODS.__name__, MODS.__path__[0])
     if "m" in Cfg.opts and os.path.exists("mods"):
-        adddir("mods", "mods")
+        initmods("mods", "mods")
     if "v" in Cfg.opts:
         banner()
     if 'a' in Cfg.opts:
-        Cfg.init = modules(Cfg.ignore)
+        Cfg.init = listmods(Cfg.ignore)
 
 
 def check(text):
@@ -179,82 +253,6 @@ def wrap(func):
         logging.exception(ex)
     if old:
         termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, old)
-
-
-"scripts"
-
-
-def background():
-    "background script."
-    daemon()
-    privileges()
-    boot()
-    pidfile(pidname(Cfg.name))
-    scanner(Cfg.ignore)
-    addcmd(cmd, mod, ver)
-    inits(Cfg.default, Cfg.ignore)
-    forever()
-
-
-def console():
-    "console script."
-    import readline
-    readline.redisplay()
-    boot()
-    scanner(Cfg.ignore)
-    addcmd(cmd, mod, ver)
-    docmd(TXT)
-    csl = Term()
-    csl.start()
-    inits(Cfg.init, Cfg.ignore, "w" in Cfg.opts)
-    forever()
-
-
-def control():
-    "cli script."
-    if len(sys.argv) == 1:
-        return
-    boot()
-    scanner(Cfg.ignore)
-    addcmd(cmd, mod, srv, ver)
-    docmd(TXT)
-
-
-def service():
-    "service script."
-    privileges()
-    banner()
-    boot()
-    pidfile(pidname(Cfg.name))
-    scanner(Cfg.ignore)
-    addcmd(cmd, mod, ver)
-    inits(Cfg.default, Cfg.ignore)
-    forever()
-
-
-"commands"
-
-
-def cmd(event):
-    "list available commands."
-    event.reply(",".join(sorted(Commands.names or Commands.cmds)))
-
-
-def mod(event):
-    "list available commands."
-    event.reply(modules(Cfg.ignore))
-
-
-def srv(event):
-    "generate systemd service file."
-    import getpass
-    name = getpass.getuser()
-    event.reply(SYSTEMD % (Cfg.name.upper(), name, name, name, Cfg.name))
-
-
-def ver(event):
-    "show version."
-    event.reply(f"{Cfg.name.upper()} {Cfg.version}")
 
 
 "data"

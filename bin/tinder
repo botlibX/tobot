@@ -13,13 +13,12 @@ import time
 sys.path.insert(0, os.getcwd())
 
 
-from tob.caching import persist
+from tob.caching import setwd
 from tob.command import Cfg, command
 from tob.message import Message
 from tob.methods import fmt, parse
 from tob.handler import Client
-from tob.objects import Config
-from tob.package import adddir, scanner
+from tob.package import initmods, scanner
 from tob.threads import launch
 from tob.timings import elapsed
 from tob.utility import wrapped
@@ -31,7 +30,7 @@ from tobot import modules as MODS
 
 Cfg.debug = True
 Cfg.level = "info"
-Cfg.name = "tobot"
+Cfg.name = "tob"
 Cfg.opts = ""
 Cfg.version = 10
 Cfg.wdr = ".test"
@@ -146,11 +145,9 @@ def main():
     if "p" not in Cfg.opts and os.path.exists(Cfg.wdr):
         shutil.rmtree(Cfg.wdr)
     parse(Cfg, " ".join(sys.argv[1:]))
-    persist(Cfg.wdr)
-    adddir("modules", MODS.__path__[0])
-    if os.path.exists("mods"):
-        adddir('mods', 'mods')
-    for mod in scanner():
+    setwd(Cfg.wdr)
+    initmods("modules", MODS.__path__[0])
+    for name, mod in scanner():
         mod.DEBUG = True
     if "v" in Cfg.opts:
         banner(Cfg.name, Cfg.version)

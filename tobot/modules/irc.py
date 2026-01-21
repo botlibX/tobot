@@ -22,9 +22,6 @@ from tob.threads import launch
 from tob.utility import ident
 
 
-NAME = "tob"
-
-
 lock = threading.RLock()
 
 
