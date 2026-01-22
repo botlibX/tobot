@@ -4,23 +4,10 @@
 "an object as the first argument"
 
 
-from .objects import Default, items
+from .objects import Default, items, typed
 
 
 "methods"
-
-
-def deleted(obj):
-    "check whether obj had deleted flag set."
-    return "__deleted__" in dir(obj) and obj.__deleted__
-
-
-def edit(obj, setter={}, skip=False):
-    "update object with dict."
-    for key, val in items(setter):
-        if skip and val == "":
-            continue
-        typed(obj, key, val)
 
 
 def fmt(obj, args=[], skip=[], plain=False, empty=False):
@@ -49,14 +36,6 @@ def fmt(obj, args=[], skip=[], plain=False, empty=False):
     if txt == "":
         txt = "{}"
     return txt.strip()
-
-
-def fqn(obj):
-    "full qualified name."
-    kin = str(type(obj)).split()[-1][1:-2]
-    if kin == "type":
-        kin = f"{obj.__module__}.{obj.__name__}"
-    return kin
 
 
 def parse(obj, text):
@@ -130,36 +109,11 @@ def search(obj, selector={}, matching=False):
     return res
 
 
-def typed(obj, key, val):
-    "assign proper types."
-    try:
-        setattr(obj, key, int(val))
-        return
-    except ValueError:
-        pass
-    try:
-        setattr(obj, key, float(val))
-        return
-    except ValueError:
-        pass
-    if val in ["True", "true", True]:
-        setattr(obj, key, True)
-    elif val in ["False", "false", False]:
-        setattr(obj, key, False)
-    else:
-        setattr(obj, key, val)
-
-
 "interface"
 
 
 def __dir__():
     return (
-        'deleted',
-        'edit',
         'fmt',
-        'fqn',
-        'parse',
-        'search',
-        'typed'
+        'parse'
     )

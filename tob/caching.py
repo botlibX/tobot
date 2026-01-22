@@ -10,11 +10,9 @@ import pathlib
 import threading
 
 
-from .methods import deleted, fqn, search
-from .objects import Object, keys, update
+from .methods import deleted, search
+from .objects import Object, fqn, keys, update
 from .serials import dump, load
-from .timings import fntime
-from .utility import ident
 
 
 lock = threading.RLock()
@@ -199,6 +197,48 @@ def cdir(path):
     "create directory."
     pth = pathlib.Path(path)
     pth.parent.mkdir(parents=True, exist_ok=True)
+
+
+def deleted(obj):
+    "check whether obj had deleted flag set."
+    return "__deleted__" in dir(obj) and obj.__deleted__
+
+
+def fntime(daystr):
+    "time from path."
+    datestr = " ".join(daystr.split(os.sep)[-2:])
+    datestr = datestr.replace("_", " ")
+    if "." in datestr:
+        datestr, rest = datestr.rsplit(".", 1)
+    else:
+        rest = ""
+    timd = time.mktime(time.strptime(datestr, "%Y-%m-%d %H:%M:%S"))
+    if rest:
+        timd += float("." + rest)
+    return float(timd)
+
+
+def ident(obj):
+    "return ident string for object."
+    return os.path.join(fqn(obj), *str(datetime.datetime.now()).split())
+
+
+def search(obj, selector={}, matching=False):
+    "check whether object matches search criteria."
+    res = False
+    for key, value in items(selector):
+        val = getattr(obj, key, None)
+        if not val:
+            res = False
+            break
+        if matching and value != val:
+            res = False
+            break
+        if str(value).lower() not in str(val).lower():
+            res = False
+            break
+        res = True
+    return res
 
 
 def strip(path):

@@ -47,6 +47,22 @@ def construct(obj, *args, **kwargs):
         update(obj, kwargs)
 
 
+def edit(obj, setter={}, skip=False):
+    "update object with dict."
+    for key, val in items(setter):
+        if skip and val == "":
+            continue
+        typed(obj, key, val)
+
+
+def fqn(obj):
+    "full qualified name."
+    kin = str(type(obj)).split()[-1][1:-2]
+    if kin == "type":
+        kin = f"{obj.__module__}.{obj.__name__}"
+    return kin
+
+
 def items(obj):
     "object's key,value pairs."
     if isinstance(obj, dict):
@@ -77,7 +93,27 @@ def keys(obj):
     if isinstance(obj, dict):
         return obj.keys()
     return obj.__dict__.keys()
-    
+
+
+def typed(obj, key, val):
+    "assign proper types."
+    try:
+        setattr(obj, key, int(val))
+        return
+    except ValueError:
+        pass
+    try:
+        setattr(obj, key, float(val))
+        return
+    except ValueError:
+        pass
+    if val in ["True", "true", True]:
+        setattr(obj, key, True)
+    elif val in ["False", "false", False]:
+        setattr(obj, key, False)
+    else:
+        setattr(obj, key, val)
+
 
 def update(obj, data, empty=True):
     "update object,"
@@ -127,8 +163,12 @@ def __dir__():
         'Default',
         'Object',
         'construct',
+        'edit',
+        'fqn',
         'items',
         'keys',
+        'search',
+        'typed',
         'update',
         'values'
     )

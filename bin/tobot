@@ -30,6 +30,7 @@ from tobot import modules as MODS
 "defines"
 
 
+NAME = sys.argv[0].split(os.sep)[-1].lower()
 TXT = " ".join(sys.argv[1:])
 
 
@@ -38,7 +39,7 @@ Cfg.default = "irc,mdl,rss,wsd"
 Cfg.ignore = "rst,web,udp"
 Cfg.init = ""
 Cfg.level = "info"
-Cfg.name = "tob"
+Cfg.name = NAME
 Cfg.version = 10
 Cfg.wdr = os.path.expanduser(f"~/.{Cfg.name}")
 
